@@ -1,6 +1,7 @@
 import decode
 import gleam/dict
 import gleam/dynamic.{DecodeError}
+import gleam/option
 import gleeunit
 import gleeunit/should
 
@@ -177,4 +178,108 @@ pub fn shallow_list_error_test() {
   |> decode.from(data)
   |> should.be_error
   |> should.equal([DecodeError("List", "Int", [])])
+}
+
+pub fn at_dict_string_ok_test() {
+  let data =
+    dynamic.from(
+      dict.from_list([
+        #(
+          "first",
+          dict.from_list([#("second", dict.from_list([#("third", 1337)]))]),
+        ),
+      ]),
+    )
+  decode.at(["first", "second", "third"], decode.int)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal(1337)
+}
+
+pub fn at_dict_int_ok_test() {
+  let data =
+    dynamic.from(
+      dict.from_list([
+        #(10, dict.from_list([#(20, dict.from_list([#(30, 1337)]))])),
+      ]),
+    )
+  decode.at([10, 20, 30], decode.int)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal(1337)
+}
+
+pub fn at_tuple_int_ok_test() {
+  let data = dynamic.from(#("x", #("a", "b", "c"), "z"))
+  decode.at([1, 0], decode.string)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal("a")
+}
+
+pub fn at_wrong_inner_error_test() {
+  let data =
+    dynamic.from(
+      dict.from_list([
+        #(
+          "first",
+          dict.from_list([#("second", dict.from_list([#("third", 1337)]))]),
+        ),
+      ]),
+    )
+  decode.at(["first", "second", "third"], decode.string)
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", ["first", "second", "third"])])
+}
+
+pub fn at_no_path_error_test() {
+  let data =
+    dynamic.from(
+      dict.from_list([#("first", dict.from_list([#("third", 1337)]))]),
+    )
+  decode.at(["first", "second", "third"], decode.int)
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("field", "nothing", ["first", "second"])])
+}
+
+pub fn optional_string_present_ok_test() {
+  let data = dynamic.from("Hello, Joe!")
+  decode.optional(decode.string)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal(option.Some("Hello, Joe!"))
+}
+
+pub fn optional_bool_present_ok_test() {
+  let data = dynamic.from(True)
+  decode.optional(decode.bool)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal(option.Some(True))
+}
+
+pub fn optional_bool_absent_nil_ok_test() {
+  let data = dynamic.from(Nil)
+  decode.optional(decode.bool)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal(option.None)
+}
+
+pub fn optional_bool_absent_none_ok_test() {
+  let data = dynamic.from(option.None)
+  decode.optional(decode.bool)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal(option.None)
+}
+
+pub fn optional_error_test() {
+  let data = dynamic.from(123)
+  decode.optional(decode.string)
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", [])])
 }

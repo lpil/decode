@@ -1,13 +1,12 @@
-// TODO: at
-// TODO: optional
+// TODO: one_of
 // TODO: optional_field
-// TODO: element? Something for tuples.
 // TODO: a function for making a decoder from a result returning function
 // TODO: combinators: map
 // TODO: combinators: monadic bind (what should it be called? Try?)
 
-import gleam/dynamic.{type Dynamic}
+import gleam/dynamic.{type Dynamic, DecodeError}
 import gleam/list
+import gleam/option.{type Option}
 
 // TODO: document
 pub type DecodeResult(t) =
@@ -28,11 +27,10 @@ pub fn parameter(body: fn(t1) -> t2) -> fn(t1) -> t2 {
   body
 }
 
-// TODO: test
 // TODO: document
 pub fn field(
   decoder: Decoder(fn(t1) -> t2),
-  field_name: String,
+  field_name: name,
   field_decoder: Decoder(t1),
 ) -> Decoder(t2) {
   Decoder(continuation: fn(data) {
@@ -69,11 +67,50 @@ pub const bit_array: Decoder(BitArray) = Decoder(
 )
 
 // TODO: document
-pub fn list(item: Decoder(a)) {
+pub fn list(item: Decoder(a)) -> Decoder(List(a)) {
   Decoder(continuation: dynamic.list(item.continuation))
+}
+
+// TODO: document
+pub fn optional(item: Decoder(a)) -> Decoder(Option(a)) {
+  Decoder(continuation: dynamic.optional(item.continuation))
 }
 
 // TODO: document
 pub const shallow_list: Decoder(List(Dynamic)) = Decoder(
   continuation: dynamic.shallow_list,
 )
+
+// TODO: document
+// TODO: document that it works with tuples too
+pub fn at(path: List(segment), inner: Decoder(a)) -> Decoder(a) {
+  Decoder(continuation: fn(data) {
+    let decoder =
+      list.fold_right(path, inner.continuation, fn(dyn_decoder, segment) {
+        flexible_index(segment, dyn_decoder, _)
+      })
+    decoder(data)
+  })
+}
+
+// Indexes into either a tuple/array, or a dict/map/object depending on the key
+fn flexible_index(
+  key: a,
+  inner: dynamic.Decoder(b),
+  data: Dynamic,
+) -> DecodeResult(b) {
+  case shallow_index(data, key) {
+    Ok(data) -> inner(data)
+    Error(_) ->
+      case dynamic.field(key, inner)(data) {
+        Ok(data) -> Ok(data)
+        Error([DecodeError(_, found, [])]) ->
+          Error([DecodeError("Indexable", found, [])])
+        Error(errors) -> Error(errors)
+      }
+  }
+}
+
+@external(erlang, "decode_ffi", "index")
+@external(javascript, "./decode_ffi.mjs", "index")
+fn shallow_index(data: Dynamic, key: anything) -> DecodeResult(Dynamic)
