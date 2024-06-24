@@ -68,6 +68,14 @@ pub fn string_error_test() {
   |> should.equal([DecodeError("String", "Int", [])])
 }
 
+pub fn dynamic_test() {
+  let data = dynamic.from(123)
+  decode.dynamic
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal(data)
+}
+
 pub fn int_ok_test() {
   let data = dynamic.from(123)
   decode.int
@@ -159,22 +167,6 @@ pub fn list_bool_ok_test() {
 pub fn list_error_test() {
   let data = dynamic.from(123)
   decode.list(decode.int)
-  |> decode.from(data)
-  |> should.be_error
-  |> should.equal([DecodeError("List", "Int", [])])
-}
-
-pub fn shallow_list_ok_test() {
-  let data = dynamic.from([dynamic.from(1), dynamic.from("two")])
-  decode.shallow_list
-  |> decode.from(data)
-  |> should.be_ok
-  |> should.equal([dynamic.from(1), dynamic.from("two")])
-}
-
-pub fn shallow_list_error_test() {
-  let data = dynamic.from(123)
-  decode.shallow_list
   |> decode.from(data)
   |> should.be_error
   |> should.equal([DecodeError("List", "Int", [])])
