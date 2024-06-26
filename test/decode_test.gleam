@@ -341,22 +341,32 @@ pub fn map_test() {
   |> should.equal("123")
 }
 
-pub fn map_error_test() {
-  let data = dynamic.from(123)
-  decode.string
-  |> decode.map_errors(fn(errors) {
-    let assert [DecodeError("String", "Int", [])] = errors
-    [
-      DecodeError("Wibble", "Wobble", ["ok"]),
-      DecodeError("Wabble", "Wubble", [""]),
-    ]
-  })
+pub fn map_errors_test() {
+  let data = dynamic.from(dict.from_list([#("data", 123)]))
+  decode.at(
+    ["data"],
+    decode.map_errors(decode.string, fn(errors) {
+      let assert [DecodeError("String", "Int", [])] = errors
+      [
+        DecodeError("Wibble", "Wobble", ["ok"]),
+        DecodeError("Wabble", "Wubble", ["ok"]),
+      ]
+    }),
+  )
   |> decode.from(data)
   |> should.be_error
   |> should.equal([
-    DecodeError("Wibble", "Wobble", ["ok"]),
-    DecodeError("Wabble", "Wubble", [""]),
+    DecodeError("Wibble", "Wobble", ["data", "ok"]),
+    DecodeError("Wabble", "Wubble", ["data", "ok"]),
   ])
+}
+
+pub fn collapse_errors_test() {
+  let data = dynamic.from(dict.from_list([#("data", 123)]))
+  decode.at(["data"], decode.string |> decode.collapse_errors("Wibble"))
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("Wibble", "Int", ["data"])])
 }
 
 pub fn then_test() {

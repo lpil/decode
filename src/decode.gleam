@@ -1,5 +1,4 @@
 // TODO: one_of
-// TODO: optional_field
 
 import gleam/dict.{type Dict}
 import gleam/dynamic.{type DecodeError, type Dynamic, DecodeError}
@@ -333,7 +332,7 @@ fn bare_index(data: Dynamic, key: anything) -> Result(Dynamic, String)
 /// # Examples
 ///
 /// ```gleam
-/// decoder.string
+/// decoder.int
 /// |> decoder.map(int.to_string)
 /// |> decoder.from(dynamic.from(1000))
 /// // -> Ok("1000")
@@ -358,6 +357,27 @@ pub fn map_errors(
     case decoder.continuation(d) {
       Ok(a) -> Ok(a)
       Error(e) -> Error(transformer(e))
+    }
+  })
+}
+
+/// Replace all errors produced by a decoder with one single error for a named
+/// expected type.
+///
+/// # Examples
+///
+/// ```gleam
+/// decoder.string
+/// |> decoder.collapse_errors("MyThing")
+/// |> decoder.from(dynamic.from(1000))
+/// // -> Error([DecodeError("MyThing", "Int", [])])
+/// ```
+///
+pub fn collapse_errors(decoder: Decoder(a), name: String) -> Decoder(a) {
+  Decoder(continuation: fn(d) {
+    case decoder.continuation(d) {
+      Ok(a) -> Ok(a)
+      Error(e) -> Error([DecodeError(name, dynamic.classify(d), [])])
     }
   })
 }
