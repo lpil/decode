@@ -144,8 +144,8 @@ pub fn from(decoder: Decoder(t), data: Dynamic) -> DecodeResult(t) {
 /// # Examples
 ///
 /// ```gleam
-/// decoder.string
-/// |> decoder.from(dynamic.from("Hello!"))
+/// decode.string
+/// |> decode.from(dynamic.from("Hello!"))
 /// // -> Ok("Hello!")
 /// ```
 ///
@@ -156,8 +156,8 @@ pub const string: Decoder(String) = Decoder(continuation: dynamic.string)
 /// # Examples
 ///
 /// ```gleam
-/// decoder.bool
-/// |> decoder.from(dynamic.from(True))
+/// decode.bool
+/// |> decode.from(dynamic.from(True))
 /// // -> Ok(True)
 /// ```
 ///
@@ -168,8 +168,8 @@ pub const bool: Decoder(Bool) = Decoder(continuation: dynamic.bool)
 /// # Examples
 ///
 /// ```gleam
-/// decoder.int
-/// |> decoder.from(dynamic.from(147))
+/// decode.int
+/// |> decode.from(dynamic.from(147))
 /// // -> Ok(147)
 /// ```
 ///
@@ -180,8 +180,8 @@ pub const int: Decoder(Int) = Decoder(continuation: dynamic.int)
 /// # Examples
 ///
 /// ```gleam
-/// decoder.float
-/// |> decoder.from(dynamic.from(3.14))
+/// decode.float
+/// |> decode.from(dynamic.from(3.14))
 /// // -> Ok(3.14)
 /// ```
 ///
@@ -192,8 +192,8 @@ pub const float: Decoder(Float) = Decoder(continuation: dynamic.float)
 /// # Examples
 ///
 /// ```gleam
-/// decoder.dynamic
-/// |> decoder.from(dynamic.from(3.14))
+/// decode.dynamic
+/// |> decode.from(dynamic.from(3.14))
 /// // -> Ok(dynamic.from(3.13))
 /// ```
 ///
@@ -204,8 +204,8 @@ pub const dynamic: Decoder(Dynamic) = Decoder(continuation: Ok)
 /// # Examples
 ///
 /// ```gleam
-/// decoder.bit_array
-/// |> decoder.from(dynamic.from(<<5, 7>>))
+/// decode.bit_array
+/// |> decode.from(dynamic.from(<<5, 7>>))
 /// // -> Ok(<<5, 7>>)
 /// ```
 ///
@@ -219,8 +219,8 @@ pub const bit_array: Decoder(BitArray) = Decoder(
 /// # Examples
 ///
 /// ```gleam
-/// decoder.list(of: decode.int)
-/// |> decoder.from(dynamic.from([1, 2, 3]))
+/// decode.list(of: decode.int)
+/// |> decode.from(dynamic.from([1, 2, 3]))
 /// // -> Ok([1, 2, 3])
 /// ```
 ///
@@ -238,8 +238,8 @@ pub fn list(of item: Decoder(a)) -> Decoder(List(a)) {
 ///   #("one", 1),
 ///   #("two", 2),
 /// ])
-/// decoder.dict(decode.string, decode.int)
-/// |> decoder.from(dynamic.from(values))
+/// decode.dict(decode.string, decode.int)
+/// |> decode.from(dynamic.from(values))
 /// // -> Ok(values)
 /// ```
 ///
@@ -260,14 +260,14 @@ pub fn dict(
 /// # Examples
 ///
 /// ```gleam
-/// decoder.optional(of: decode.int)
-/// |> decoder.from(dynamic.from(100))
+/// decode.optional(of: decode.int)
+/// |> decode.from(dynamic.from(100))
 /// // -> Ok(option.Some(100))
 /// ```
 ///
 /// ```gleam
-/// decoder.optional(of: decode.int)
-/// |> decoder.from(dynamic.from(Nil))
+/// decode.optional(of: decode.int)
+/// |> decode.from(dynamic.from(Nil))
 /// // -> Ok(option.None)
 /// ```
 ///
@@ -290,14 +290,14 @@ pub fn optional(item: Decoder(a)) -> Decoder(Option(a)) {
 ///   ])),
 /// ]))
 ///
-/// decoder.at(["one", "two"], decode.int)
-/// |> decoder.from(data)
+/// decode.at(["one", "two"], decode.int)
+/// |> decode.from(data)
 /// // -> Ok(1000)
 /// ```
 ///
 /// ```gleam
-/// decoder.optional(of: decode.int)
-/// |> decoder.from(dynamic.from(Nil))
+/// decode.optional(of: decode.int)
+/// |> decode.from(dynamic.from(Nil))
 /// // -> Ok(option.None)
 /// ```
 ///
@@ -332,9 +332,9 @@ fn bare_index(data: Dynamic, key: anything) -> Result(Dynamic, String)
 /// # Examples
 ///
 /// ```gleam
-/// decoder.int
-/// |> decoder.map(int.to_string)
-/// |> decoder.from(dynamic.from(1000))
+/// decode.int
+/// |> decode.map(int.to_string)
+/// |> decode.from(dynamic.from(1000))
 /// // -> Ok("1000")
 /// ```
 ///
@@ -364,12 +364,15 @@ pub fn map_errors(
 /// Replace all errors produced by a decoder with one single error for a named
 /// expected type.
 ///
+/// This function may be useful if you wish to simplify errors before
+/// presenting them to a user, particularly when using the `one_of` function.
+///
 /// # Examples
 ///
 /// ```gleam
-/// decoder.string
-/// |> decoder.collapse_errors("MyThing")
-/// |> decoder.from(dynamic.from(1000))
+/// decode.string
+/// |> decode.collapse_errors("MyThing")
+/// |> decode.from(dynamic.from(1000))
 /// // -> Error([DecodeError("MyThing", "Int", [])])
 /// ```
 ///
@@ -377,7 +380,7 @@ pub fn collapse_errors(decoder: Decoder(a), name: String) -> Decoder(a) {
   Decoder(continuation: fn(d) {
     case decoder.continuation(d) {
       Ok(a) -> Ok(a)
-      Error(e) -> Error([DecodeError(name, dynamic.classify(d), [])])
+      Error(_) -> Error([DecodeError(name, dynamic.classify(d), [])])
     }
   })
 }
@@ -394,6 +397,42 @@ pub fn then(decoder: Decoder(a), next: fn(a) -> Decoder(b)) -> Decoder(b) {
       Error(e) -> Error(e)
     }
   })
+}
+
+/// Create a new decoder from several other decoders. Each of the inner
+/// decoders is run in turn, and the value from the first to succeed is used.
+///
+/// If no decoder succeeds then the errors from the final decoder is used.
+/// If you wish for different errors then you may wish to use the
+/// `collapse_errors` or `map_errors` functions.
+///
+/// # Examples
+///
+/// ```gleam
+/// decode.one_of([
+///   decode.string,
+///   decode.int |> decode.map(int.to_string),
+/// ])
+/// |> decode.from(dynamic.from(1000))
+/// // -> Ok("1000")
+/// ```
+///
+pub fn one_of(decoders: List(Decoder(a))) -> Decoder(a) {
+  Decoder(continuation: fn(d) { run_decoders(d, decoders) })
+}
+
+fn run_decoders(data: Dynamic, decoders: List(Decoder(a))) -> DecodeResult(a) {
+  case decoders {
+    [] -> Error([DecodeError("nothing", dynamic.classify(data), [])])
+
+    [decoder] -> from(decoder, data)
+
+    [decoder, ..decoders] ->
+      case from(decoder, data) {
+        Ok(value) -> Ok(value)
+        Error(_) -> run_decoders(data, decoders)
+      }
+  }
 }
 
 fn push_path(errors: List(DecodeError), key: t) -> List(DecodeError) {

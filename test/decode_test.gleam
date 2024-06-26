@@ -440,3 +440,36 @@ pub fn then_error_1_test() {
   |> should.be_error
   |> should.equal([DecodeError("Int", "String", ["value"])])
 }
+
+pub fn one_of_ok_0_test() {
+  decode.one_of([
+    decode.string,
+    decode.int
+      |> decode.map(int.to_string),
+  ])
+  |> decode.from(dynamic.from("Hello!"))
+  |> should.be_ok
+  |> should.equal("Hello!")
+}
+
+pub fn one_of_ok_1_test() {
+  decode.one_of([
+    decode.string,
+    decode.int
+      |> decode.map(int.to_string),
+  ])
+  |> decode.from(dynamic.from(123))
+  |> should.be_ok
+  |> should.equal("123")
+}
+
+pub fn one_of_error_test() {
+  decode.one_of([
+    decode.string,
+    decode.int
+      |> decode.map(int.to_string),
+  ])
+  |> decode.from(dynamic.from(1.2))
+  |> should.be_error
+  |> should.equal([DecodeError("Int", "Float", [])])
+}
