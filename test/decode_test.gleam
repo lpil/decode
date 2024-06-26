@@ -341,6 +341,24 @@ pub fn map_test() {
   |> should.equal("123")
 }
 
+pub fn map_error_test() {
+  let data = dynamic.from(123)
+  decode.string
+  |> decode.map_errors(fn(errors) {
+    let assert [DecodeError("String", "Int", [])] = errors
+    [
+      DecodeError("Wibble", "Wobble", ["ok"]),
+      DecodeError("Wabble", "Wubble", [""]),
+    ]
+  })
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([
+    DecodeError("Wibble", "Wobble", ["ok"]),
+    DecodeError("Wabble", "Wubble", [""]),
+  ])
+}
+
 pub fn then_test() {
   let decoder =
     decode.at(["key"], decode.int)

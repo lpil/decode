@@ -348,6 +348,20 @@ pub fn map(decoder: Decoder(a), transformer: fn(a) -> b) -> Decoder(b) {
   })
 }
 
+/// Apply a transformation function to any errors returned by the decoder.
+///
+pub fn map_errors(
+  decoder: Decoder(a),
+  transformer: fn(List(DecodeError)) -> List(DecodeError),
+) -> Decoder(a) {
+  Decoder(continuation: fn(d) {
+    case decoder.continuation(d) {
+      Ok(a) -> Ok(a)
+      Error(e) -> Error(transformer(e))
+    }
+  })
+}
+
 /// Create a new decoder based upon the value of a previous decoder.
 ///
 /// This may be useful for when you need to know some of the structure of the
