@@ -1,6 +1,7 @@
 import decode
 import gleam/dict
 import gleam/dynamic.{DecodeError}
+import gleam/int
 import gleam/option
 import gleeunit
 import gleeunit/should
@@ -50,6 +51,28 @@ pub fn decoder_test() {
   result
   |> should.be_ok
   |> should.equal(User("Nubi", "nubi@example.com", False, True, 180))
+}
+
+pub fn field_ok_test() {
+  let data = dynamic.from(dict.from_list([#("name", dynamic.from("Nubi"))]))
+  let result =
+    decode.into(fn(x) { x })
+    |> decode.field("name", decode.string)
+    |> decode.from(data)
+  result
+  |> should.be_ok
+  |> should.equal("Nubi")
+}
+
+pub fn field_not_found_error_test() {
+  let data = dynamic.from(123)
+  let result =
+    decode.into(fn(x) { x })
+    |> decode.field("name", decode.string)
+    |> decode.from(data)
+  result
+  |> should.be_error
+  |> should.equal([DecodeError("Dict", "Int", [])])
 }
 
 pub fn string_ok_test() {
@@ -172,6 +195,39 @@ pub fn list_error_test() {
   |> should.equal([DecodeError("List", "Int", [])])
 }
 
+pub fn dict_ok_test() {
+  let values = dict.from_list([#("first", 1), #("second", 2)])
+  let data = dynamic.from(values)
+  decode.dict(decode.string, decode.int)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal(values)
+}
+
+pub fn dict_value_error_test() {
+  let data = dynamic.from(dict.from_list([#(1.1, 1), #(1.2, 2)]))
+  decode.dict(decode.float, decode.string)
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", ["values"])])
+}
+
+pub fn dict_key_error_test() {
+  let data = dynamic.from(dict.from_list([#(1.1, 1), #(1.2, 2)]))
+  decode.dict(decode.string, decode.int)
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Float", ["keys"])])
+}
+
+pub fn dict_error_test() {
+  let data = dynamic.from(123)
+  decode.dict(decode.string, decode.int)
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("Dict", "Int", [])])
+}
+
 pub fn at_dict_string_ok_test() {
   let data =
     dynamic.from(
@@ -233,7 +289,7 @@ pub fn at_no_path_error_test() {
   decode.at(["first", "second", "third"], decode.int)
   |> decode.from(data)
   |> should.be_error
-  |> should.equal([DecodeError("field", "nothing", ["first", "second"])])
+  |> should.equal([DecodeError("Dict", "Nil", ["first", "second"])])
 }
 
 pub fn optional_string_present_ok_test() {
@@ -274,4 +330,85 @@ pub fn optional_error_test() {
   |> decode.from(data)
   |> should.be_error
   |> should.equal([DecodeError("String", "Int", [])])
+}
+
+pub fn map_test() {
+  let data = dynamic.from(123)
+  decode.int
+  |> decode.map(int.to_string)
+  |> decode.from(data)
+  |> should.be_ok
+  |> should.equal("123")
+}
+
+pub fn then_test() {
+  let decoder =
+    decode.at(["key"], decode.int)
+    |> decode.then(fn(i) {
+      decode.at(["value"], case i {
+        1 -> decode.int |> decode.map(AnInt)
+        _ -> decode.string |> decode.map(AString)
+      })
+    })
+
+  decoder
+  |> decode.from(dynamic.from(dict.from_list([#("key", 1), #("value", 100)])))
+  |> should.be_ok
+  |> should.equal(AnInt(100))
+
+  decoder
+  |> decode.from(
+    dynamic.from(
+      dict.from_list([
+        #("key", dynamic.from(2)),
+        #("value", dynamic.from("Hi!")),
+      ]),
+    ),
+  )
+  |> should.be_ok
+  |> should.equal(AString("Hi!"))
+}
+
+type IntOrString {
+  AnInt(Int)
+  AString(String)
+}
+
+pub fn then_error_0_test() {
+  let decoder =
+    decode.at(["key"], decode.int)
+    |> decode.then(fn(i) {
+      decode.at(["value"], case i {
+        1 -> decode.int |> decode.map(AnInt)
+        _ -> decode.string |> decode.map(AString)
+      })
+    })
+
+  decoder
+  |> decode.from(dynamic.from(123))
+  |> should.be_error
+  |> should.equal([DecodeError("Dict", "Int", [])])
+}
+
+pub fn then_error_1_test() {
+  let decoder =
+    decode.at(["key"], decode.int)
+    |> decode.then(fn(i) {
+      decode.at(["value"], case i {
+        1 -> decode.int |> decode.map(AnInt)
+        _ -> decode.string |> decode.map(AString)
+      })
+    })
+
+  decoder
+  |> decode.from(
+    dynamic.from(
+      dict.from_list([
+        #("key", dynamic.from(1)),
+        #("value", dynamic.from("Hi!")),
+      ]),
+    ),
+  )
+  |> should.be_error
+  |> should.equal([DecodeError("Int", "String", ["value"])])
 }

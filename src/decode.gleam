@@ -1,12 +1,12 @@
 // TODO: one_of
 // TODO: optional_field
-// TODO: a function for making a decoder from a result returning function
-// TODO: combinators: map
-// TODO: combinators: monadic bind (what should it be called? Try?)
 
-import gleam/dynamic.{type Dynamic, DecodeError}
+import gleam/dict.{type Dict}
+import gleam/dynamic.{type DecodeError, type Dynamic, DecodeError}
+import gleam/int
 import gleam/list
 import gleam/option.{type Option}
+import gleam/result
 
 /// The result that a decoder runs when run.
 pub type DecodeResult(t) =
@@ -229,6 +229,28 @@ pub fn list(of item: Decoder(a)) -> Decoder(List(a)) {
   Decoder(continuation: dynamic.list(item.continuation))
 }
 
+/// A decoder that decodes dicts where all keys and vales are decoded with
+/// given decoders.
+///
+/// # Examples
+///
+/// ```gleam
+/// let values = dict.from_list([
+///   #("one", 1),
+///   #("two", 2),
+/// ])
+/// decoder.dict(decode.string, decode.int)
+/// |> decoder.from(dynamic.from(values))
+/// // -> Ok(values)
+/// ```
+///
+pub fn dict(
+  key: Decoder(key),
+  value: Decoder(value),
+) -> Decoder(Dict(key, value)) {
+  Decoder(continuation: dynamic.dict(key.continuation, value.continuation))
+}
+
 /// A decoder that decodes nullable values of a type decoded by with a given
 /// decoder.
 ///
@@ -284,30 +306,72 @@ pub fn at(path: List(segment), inner: Decoder(a)) -> Decoder(a) {
   Decoder(continuation: fn(data) {
     let decoder =
       list.fold_right(path, inner.continuation, fn(dyn_decoder, segment) {
-        flexible_index(segment, dyn_decoder, _)
+        index(segment, dyn_decoder, _)
       })
     decoder(data)
   })
 }
 
 // Indexes into either a tuple/array, or a dict/map/object depending on the key
-fn flexible_index(
-  key: a,
-  inner: dynamic.Decoder(b),
-  data: Dynamic,
-) -> DecodeResult(b) {
-  case shallow_index(data, key) {
-    Ok(data) -> inner(data)
-    Error(_) ->
-      case dynamic.field(key, inner)(data) {
+fn index(key: a, inner: dynamic.Decoder(b), data: Dynamic) -> DecodeResult(b) {
+  case bare_index(data, key) {
+    Ok(data) ->
+      case inner(data) {
         Ok(data) -> Ok(data)
-        Error([DecodeError(_, found, [])]) ->
-          Error([DecodeError("Indexable", found, [])])
-        Error(errors) -> Error(errors)
+        Error(errors) -> Error(push_path(errors, key))
       }
+    Error(kind) -> Error([DecodeError(kind, dynamic.classify(data), [])])
   }
 }
 
 @external(erlang, "decode_ffi", "index")
 @external(javascript, "./decode_ffi.mjs", "index")
-fn shallow_index(data: Dynamic, key: anything) -> DecodeResult(Dynamic)
+fn bare_index(data: Dynamic, key: anything) -> Result(Dynamic, String)
+
+/// Apply a transformation function to any value decoded by the decoder.
+///
+/// # Examples
+///
+/// ```gleam
+/// decoder.string
+/// |> decoder.map(int.to_string)
+/// |> decoder.from(dynamic.from(1000))
+/// // -> Ok("1000")
+/// ```
+///
+pub fn map(decoder: Decoder(a), transformer: fn(a) -> b) -> Decoder(b) {
+  Decoder(continuation: fn(d) {
+    case decoder.continuation(d) {
+      Ok(a) -> Ok(transformer(a))
+      Error(e) -> Error(e)
+    }
+  })
+}
+
+/// Create a new decoder based upon the value of a previous decoder.
+///
+/// This may be useful for when you need to know some of the structure of the
+/// dynamic value in order to know how to decode the rest of it.
+///
+pub fn then(decoder: Decoder(a), next: fn(a) -> Decoder(b)) -> Decoder(b) {
+  Decoder(continuation: fn(d) {
+    case decoder.continuation(d) {
+      Ok(a) -> next(a) |> from(d)
+      Error(e) -> Error(e)
+    }
+  })
+}
+
+fn push_path(errors: List(DecodeError), key: t) -> List(DecodeError) {
+  let key = dynamic.from(key)
+  let decoder =
+    dynamic.any([
+      dynamic.string,
+      fn(x) { result.map(dynamic.int(x), int.to_string) },
+    ])
+  let key = case decoder(key) {
+    Ok(key) -> key
+    Error(_) -> "<" <> dynamic.classify(key) <> ">"
+  }
+  list.map(errors, fn(error) { DecodeError(..error, path: [key, ..error.path]) })
+}
