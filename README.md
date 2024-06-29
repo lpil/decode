@@ -1,15 +1,15 @@
-# decoder
+# decode
 
 Ergonomic dynamic decoders for Gleam!
 
-[![Package Version](https://img.shields.io/hexpm/v/decoder)](https://hex.pm/packages/decoder)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/decoder/)
+[![Package Version](https://img.shields.io/hexpm/v/decode)](https://hex.pm/packages/decode)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/decode/)
 
 ```sh
-gleam add decoder
+gleam add decode
 ```
 ```gleam
-import decoder
+import decode
 
 pub type User {
   User(name: String, email: String, is_admin: Bool)
@@ -39,5 +39,4 @@ pub fn run(data: Dynamic) {
   |> decode.from(data)
 }
 ```
-
-For more documentation and examples view <https://hexdocs.pm/decoder>.
+For more documentation and examples view <https://hexdocs.pm/decode>.
