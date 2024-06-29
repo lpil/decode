@@ -195,6 +195,22 @@ pub fn list_error_test() {
   |> should.equal([DecodeError("List", "Int", [])])
 }
 
+pub fn list_inner_0_error_test() {
+  let data = dynamic.from([1, 2])
+  decode.list(decode.string)
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", ["*"])])
+}
+
+pub fn list_inner_1_error_test() {
+  let data = dynamic.from([dynamic.from("1"), dynamic.from(2)])
+  decode.list(decode.string)
+  |> decode.from(data)
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", ["*"])])
+}
+
 pub fn dict_ok_test() {
   let values = dict.from_list([#("first", 1), #("second", 2)])
   let data = dynamic.from(values)
