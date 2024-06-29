@@ -1,5 +1,7 @@
 # decoder
 
+Ergonomic dynamic decoders for Gleam!
+
 [![Package Version](https://img.shields.io/hexpm/v/decoder)](https://hex.pm/packages/decoder)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/decoder/)
 
@@ -9,17 +11,33 @@ gleam add decoder
 ```gleam
 import decoder
 
-pub fn main() {
-  // TODO: An example of the project in use
+pub type User {
+  User(name: String, email: String, is_admin: Bool)
+}
+
+/// Decode data of this shape into a `User` record.
+///
+/// {
+///   "name": "Lucy",
+///   "email": "lucy@example.com",
+///   "is-admin": true
+/// }
+///
+pub fn run(data: Dynamic) {
+  let result =
+    decode.into({
+      use name <- decode.parameter
+      use email <- decode.parameter
+      use is_admin <- decode.parameter
+      User(name, email, is_admin)
+    })
+    |> decode.field("name", decode.string)
+    |> decode.field("email", decode.string)
+    |> decode.field("is-admin", decode.bool)
+
+  decoder
+  |> decode.from(data)
 }
 ```
 
-Further documentation can be found at <https://hexdocs.pm/decoder>.
-
-## Development
-
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
-gleam shell # Run an Erlang shell
-```
+For more documentation and examples view <https://hexdocs.pm/decoder>.
