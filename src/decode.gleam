@@ -22,17 +22,7 @@
 //// be used to describe or construct them. In these examples the JSON syntax is
 //// largely used, and you can apply the same techniques to data from any source.
 //// 
-//// - [Example: Simple types](#example-simple-types)
-//// - [Example: Lists](#example-lists)
-//// - [Example: Options](#example-options)
-//// - [Example: Dicts](#example-dicts)
-//// - [Example: Indexing objects](#example-indexing-objects)
-//// - [Example: Indexing arrays](#example-indexing-arrays)
-//// - [Example: Records](#example-records)
-//// - [Example: Enum variants](#example-enum-variants)
-//// - [Example: Record variants](#example-record-variants)
-//// 
-//// ## Example: Simple types
+//// ## Simple types
 //// 
 //// This module defines decoders for simple data types such as [`string`](#string),
 //// [`int`](#int), [`float`](#float), [`bit_array`](#bit_array), and [`bool`](#bool).
@@ -48,7 +38,7 @@
 //// let assert Ok("Hello, Joe!") = result 
 //// ```
 //// 
-//// ## Example: Lists
+//// ## Lists
 //// 
 //// The [`list`](#list) decoder decodes `List`s. To use it you must construct it by
 //// passing in another decoder into the `list` function, which is the decoder that
@@ -69,7 +59,7 @@
 //// On Erlang this decoder can decode from lists, and on JavaScript it can decode
 //// from lists as well as JavaScript arrays.
 //// 
-//// ## Example: Options
+//// ## Options
 //// 
 //// The [`optional`](#optional) decoder is used to decode values with may or may not
 //// be present. In other environment these might be called "nullable" values.
@@ -101,7 +91,7 @@
 //// This decoder knows how to handle multiple different runtime representations of
 //// absent values, including `Nil`, `None`, `null`, and `undefined`.
 //// 
-//// ## Example: Dicts
+//// ## Dicts
 //// 
 //// The [`dict`](#dict) decoder decodes `Dicts` and contains two other decoders, one
 //// for the keys, one for the values.
@@ -117,7 +107,7 @@
 //// let assert Ok(dict.from_list([#("Lucy", 10), #("Nubi": 20)])) = result
 //// ```
 //// 
-//// ## Example: Indexing objects
+//// ## Indexing objects
 //// 
 //// The [`at`](#at) decoder can be used to decode a value that is nested within
 //// key-value containers such as Gleam dicts, Erlang maps, or JavaScript objects.
@@ -133,7 +123,7 @@
 //// let assert Ok(123) = result
 //// ```
 //// 
-//// ## Example: Indexing arrays
+//// ## Indexing arrays
 //// 
 //// If you use ints as keys then the [`at`](#at) decoder can be used to index into
 //// array-like containers such as Gleam or Erlang tuples, or JavaScript arrays.
@@ -149,7 +139,7 @@
 //// let assert Ok("two") = result
 //// ```
 //// 
-//// ## Example: Records
+//// ## Records
 //// 
 //// Decoding records from dynamic data is more complex and requires combining a
 //// decoder for each field and a special constructor that builds your records with
@@ -185,7 +175,7 @@
 //// The ordering of the parameters defined with the `parameter` function must match
 //// the ordering of the decoders used with the `field` function.
 //// 
-//// ## Example: Enum variants
+//// ## Enum variants
 //// 
 //// Imagine you have a custom type where all the variants do not contain any values.
 //// 
@@ -229,7 +219,7 @@
 //// // -> Error([DecodeError("PocketMonsterType", "String", [])])
 //// ```
 //// 
-//// ## Example: Record variants
+//// ## Record variants
 //// 
 //// Decoding type variants that contain other values is done by combining the
 //// techniques from the "enum variants" and "records" examples. Imagine you have
@@ -343,7 +333,7 @@ pub opaque type Decoder(t) {
 /// |> decode.field("name", string)
 /// |> decode.field("email", string)
 /// |> decode.from(data)
-/// Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
+/// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
 ///
 pub fn into(constructor: t1) -> Decoder(t1) {
@@ -369,7 +359,7 @@ pub fn into(constructor: t1) -> Decoder(t1) {
 /// |> decode.field("name", string)
 /// |> decode.field("email", string)
 /// |> decode.from(data)
-/// Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
+/// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
 ///
 pub fn parameter(body: fn(t1) -> t2) -> fn(t1) -> t2 {
@@ -400,7 +390,7 @@ pub fn parameter(body: fn(t1) -> t2) -> fn(t1) -> t2 {
 /// |> decode.field("name", string)
 /// |> decode.field("email", string)
 /// |> decode.from(data)
-/// Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
+/// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
 ///
 pub fn field(
