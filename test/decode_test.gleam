@@ -441,6 +441,41 @@ pub fn then_error_1_test() {
   |> should.equal([DecodeError("Int", "String", ["value"])])
 }
 
+pub type MyEnum {
+  A
+  B
+  C
+}
+
+pub fn then_enum_test() {
+  let decoder =
+    decode.string
+    |> decode.then(fn(s) {
+      case s {
+        "a" -> decode.into(A)
+        "b" -> decode.into(B)
+        "c" -> decode.into(C)
+        _ -> decode.fail("MyEnum")
+      }
+    })
+
+  decode.from(decoder, dynamic.from("a"))
+  |> should.be_ok
+  |> should.equal(A)
+
+  decode.from(decoder, dynamic.from("b"))
+  |> should.be_ok
+  |> should.equal(B)
+
+  decode.from(decoder, dynamic.from("c"))
+  |> should.be_ok
+  |> should.equal(C)
+
+  decode.from(decoder, dynamic.from("d"))
+  |> should.be_error
+  |> should.equal([DecodeError("MyEnum", "String", [])])
+}
+
 pub fn one_of_ok_0_test() {
   decode.one_of([
     decode.string,
@@ -472,4 +507,11 @@ pub fn one_of_error_test() {
   |> decode.from(dynamic.from(1.2))
   |> should.be_error
   |> should.equal([DecodeError("Int", "Float", [])])
+}
+
+pub fn fail_test() {
+  decode.fail("WibbleWobble")
+  |> decode.from(dynamic.from(123))
+  |> should.be_error
+  |> should.equal([DecodeError("WibbleWobble", "Int", [])])
 }
