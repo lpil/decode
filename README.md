@@ -24,7 +24,7 @@ pub type User {
 /// }
 ///
 pub fn run(data: Dynamic) {
-  let result =
+  let decoder =
     decode.into({
       use name <- decode.parameter
       use email <- decode.parameter
