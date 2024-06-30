@@ -400,7 +400,7 @@ pub fn field(
 ) -> Decoder(t2) {
   Decoder(continuation: fn(data) {
     let constructor = decoder.continuation(data)
-    let data = dynamic.field(field_name, from(field_decoder, _))(data)
+    let data = from(at([field_name], field_decoder), data)
     case constructor, data {
       Ok(constructor), Ok(data) -> Ok(constructor(data))
       Error(e1), Error(e2) -> Error(list.append(e1, e2))

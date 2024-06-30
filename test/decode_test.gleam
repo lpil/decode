@@ -64,6 +64,22 @@ pub fn field_ok_test() {
   |> should.equal("Nubi")
 }
 
+pub fn field_int_index_ok_test() {
+  let data = dynamic.from(#("one", "two", "three"))
+  let result =
+    decode.into({
+      use x <- decode.parameter
+      use y <- decode.parameter
+      #(x, y)
+    })
+    |> decode.field(0, decode.string)
+    |> decode.field(1, decode.string)
+    |> decode.from(data)
+  result
+  |> should.be_ok
+  |> should.equal(#("one", "two"))
+}
+
 pub fn field_not_found_error_test() {
   let data = dynamic.from(123)
   let result =
