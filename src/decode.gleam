@@ -393,14 +393,49 @@ pub fn parameter(body: fn(t1) -> t2) -> fn(t1) -> t2 {
 /// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
 ///
+/// If you wish to decode a value that is more deeply nested within the dynamic
+/// data see [`subfield`](#subfield) and [`at`](#at).
+///
 pub fn field(
   decoder: Decoder(fn(t1) -> t2),
   field_name: name,
   field_decoder: Decoder(t1),
 ) -> Decoder(t2) {
+  subfield(decoder, [field_name], field_decoder)
+}
+
+/// The same as [`field`](#field), except taking a path to the value rather
+/// than a field name.
+///
+/// # Examples
+///
+/// ```gleam
+/// let data = dynamic.from(dict.from_list([
+///   #("data", data.from_list([
+///     #("email", "lucy@example.com"),
+///     #("name", "Lucy"),
+///   ]))
+/// ]))
+///
+/// decode.into({
+///   use name <- decode.parameter
+///   use email <- decode.parameter
+///   SignUp(name: name, email: email)
+/// })
+/// |> decode.subfield(["data", "name"], string)
+/// |> decode.subfield(["data", "email"], string)
+/// |> decode.from(data)
+/// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
+/// ```
+///
+pub fn subfield(
+  decoder: Decoder(fn(t1) -> t2),
+  field_path: List(name),
+  field_decoder: Decoder(t1),
+) -> Decoder(t2) {
   Decoder(continuation: fn(data) {
     let constructor = decoder.continuation(data)
-    let data = from(at([field_name], field_decoder), data)
+    let data = from(at(field_path, field_decoder), data)
     case constructor, data {
       Ok(constructor), Ok(data) -> Ok(constructor(data))
       Error(e1), Error(e2) -> Error(list.append(e1, e2))

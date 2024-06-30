@@ -91,6 +91,71 @@ pub fn field_not_found_error_test() {
   |> should.equal([DecodeError("Dict", "Int", [])])
 }
 
+pub fn field_wrong_inner_error_test() {
+  let data = dynamic.from(dict.from_list([#("name", dynamic.from(123))]))
+  let result =
+    decode.into(fn(x) { x })
+    |> decode.field("name", decode.string)
+    |> decode.from(data)
+  result
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", ["name"])])
+}
+
+pub fn subfield_ok_test() {
+  let data =
+    dynamic.from(
+      dict.from_list([
+        #("data", dict.from_list([#("name", dynamic.from("Nubi"))])),
+      ]),
+    )
+  let result =
+    decode.into(fn(x) { x })
+    |> decode.subfield(["data", "name"], decode.string)
+    |> decode.from(data)
+  result
+  |> should.be_ok
+  |> should.equal("Nubi")
+}
+
+pub fn subfield_int_index_ok_test() {
+  let data = dynamic.from(#(#("one", "two", "three"), #("a", "b")))
+  let result =
+    decode.into({
+      use x <- decode.parameter
+      use y <- decode.parameter
+      #(x, y)
+    })
+    |> decode.subfield([0, 1], decode.string)
+    |> decode.subfield([1, 0], decode.string)
+    |> decode.from(data)
+  result
+  |> should.be_ok
+  |> should.equal(#("two", "a"))
+}
+
+pub fn subfield_not_found_error_test() {
+  let data = dynamic.from(123)
+  let result =
+    decode.into(fn(x) { x })
+    |> decode.subfield(["name"], decode.string)
+    |> decode.from(data)
+  result
+  |> should.be_error
+  |> should.equal([DecodeError("Dict", "Int", [])])
+}
+
+pub fn subfield_wrong_inner_error_test() {
+  let data = dynamic.from(dict.from_list([#("name", dynamic.from(123))]))
+  let result =
+    decode.into(fn(x) { x })
+    |> decode.subfield(["name"], decode.string)
+    |> decode.from(data)
+  result
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", ["name"])])
+}
+
 pub fn string_ok_test() {
   let data = dynamic.from("Hello!")
   decode.string
