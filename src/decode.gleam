@@ -1,10 +1,10 @@
 //// The `Dynamic` type is used to represent dynamically typed data. That is, data
 //// that we don't know the precise type of yet, so we need to introspect the data to
 //// see if it is of the desired type before we can use it. Typically data like this
-//// would come from user input or from untyped languages such Erlang or JavaScript.
+//// would come from user input or from untyped languages such as Erlang or JavaScript.
 //// 
 //// This module provides the `Decoder` type and associated functions, which provides
-//// a type safe and composable way to convert dynamic data into some desired type,
+//// a type-safe and composable way to convert dynamic data into some desired type,
 //// or into errors if the data doesn't have the desired structure.
 //// 
 //// The `Decoder` type is generic and has 1 type parameter, which is the type that
@@ -53,7 +53,7 @@
 ////   decode.list(decode.int)
 ////   |> decode.from(data)
 //// 
-//// let assert Ok([1, 2, 3]) = result 
+//// let assert Ok([1, 2, 3, 4]) = result 
 //// ```
 //// 
 //// On Erlang this decoder can decode from lists, and on JavaScript it can decode
@@ -61,11 +61,11 @@
 //// 
 //// ## Options
 //// 
-//// The [`optional`](#optional) decoder is used to decode values with may or may not
+//// The [`optional`](#optional) decoder is used to decode values that may or may not
 //// be present. In other environment these might be called "nullable" values.
 //// 
-//// Like the `list` decoder in that is takes another decoder, which is used to decode
-//// the value if it is present.
+//// Like the `list` decoder, the `optional` decoder takes another decoder,
+//// which is used to decode the value if it is present.
 //// 
 //// ```gleam
 //// // Data:
@@ -188,11 +188,11 @@
 //// }
 //// ```
 //// 
-//// You might chose to encode these variants as strings, `"fire"` for `Fire`,
+//// You might choose to encode these variants as strings, `"fire"` for `Fire`,
 //// `"water"` for `Water`, and so on. To decode them you'll need to decode the dynamic
 //// data as a string, but then you'll need to decode it further still as not all
 //// strings are valid values for the enum. This can be done with the `then`
-//// function, which enables running of a second decoder after the first one
+//// function, which enables running a second decoder after the first one
 //// succeeds.
 //// 
 //// ```gleam
@@ -205,7 +205,7 @@
 ////       "water" -> decode.into(Water) 
 ////       "grass" -> decode.into(Grass) 
 ////       "electric" -> decode.into(Electric) 
-////       // Return a failing decoders for any other string
+////       // Return a failing decoder for any other strings
 ////       _ -> decode.fail("PocketMonsterType")
 ////     }
 ////   })
@@ -297,7 +297,7 @@ import gleam/list
 import gleam/option.{type Option}
 import gleam/result
 
-/// The result that a decoder runs when run.
+/// The result that a decoder returns when run.
 pub type DecodeResult(t) =
   Result(t, List(dynamic.DecodeError))
 
@@ -313,7 +313,7 @@ pub opaque type Decoder(t) {
 
 /// Create a new decoder for a given constructor function. If this function is
 /// a function that takes parameters one-at-a-time, such as anonymous functions
-/// made with `use name <- decode.parameter` then the decoder can be used with
+/// made with `use name <- decode.parameter`, then the decoder can be used with
 /// the `decode.field` function to decode a value that contains multiple other
 /// values.
 ///
@@ -371,6 +371,7 @@ pub fn parameter(body: fn(t1) -> t2) -> fn(t1) -> t2 {
 ///
 /// The second parameter is a field name which will be used to index into the
 /// `Dynamic` data.
+///
 /// This function will index into dictionaries with any key type, and if the key is
 /// an int then it'll also index into Erlang tuples and JavaScript arrays.
 ///
@@ -394,7 +395,7 @@ pub fn parameter(body: fn(t1) -> t2) -> fn(t1) -> t2 {
 /// ```
 ///
 /// If you wish to decode a value that is more deeply nested within the dynamic
-/// data see [`subfield`](#subfield) and [`at`](#at).
+/// data, see [`subfield`](#subfield) and [`at`](#at).
 ///
 pub fn field(
   decoder: Decoder(fn(t1) -> t2),
@@ -519,7 +520,7 @@ pub const float: Decoder(Float) = Decoder(continuation: dynamic.float)
 /// ```gleam
 /// decode.dynamic
 /// |> decode.from(dynamic.from(3.14))
-/// // -> Ok(dynamic.from(3.13))
+/// // -> Ok(dynamic.from(3.14))
 /// ```
 ///
 pub const dynamic: Decoder(Dynamic) = Decoder(continuation: Ok)
@@ -578,7 +579,7 @@ pub fn dict(
 /// A decoder that decodes nullable values of a type decoded by with a given
 /// decoder.
 ///
-/// This function common representations of null on all runtimes, such as
+/// This function can handle common representations of null on all runtimes, such as
 /// `nil`, `null`, and `undefined` on Erlang, and `undefined` and `null` on
 /// JavaScript.
 ///
