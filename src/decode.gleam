@@ -523,7 +523,7 @@ pub const float: Decoder(Float) = Decoder(continuation: dynamic.float)
 /// // -> Ok(dynamic.from(3.14))
 /// ```
 ///
-pub const dynamic: Decoder(Dynamic) = Decoder(continuation: Ok)
+pub const dynamic: Decoder(Dynamic) = Decoder(continuation: dynamic.dynamic)
 
 /// A decoder that decodes `BitArray` values. This decoder never returns an error.
 ///
