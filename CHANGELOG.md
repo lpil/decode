@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.1 - 2024-09-01
+
+- Fixed JavaScript support.
+
 ## v0.2.0 - 2024-06-30
 
 - Added the `subfield` function.
