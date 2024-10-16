@@ -614,15 +614,9 @@ pub fn run(
   }
 }
 
-// pub fn at(path: List(segment), inner: Decoder(a)) -> Decoder(a) {
-//   Decoder(function: fn(data) {
-//     let decoder =
-//       list.fold_right(path, inner.function, fn(dyn_decoder, segment) {
-//         index(segment, dyn_decoder, _)
-//       })
-//     decoder(data)
-//   })
-// }
+pub fn at(path: List(segment), inner: Decoder(a)) -> Decoder(a) {
+  Decoder(function: fn(data) { index(path, [], inner.function, data) })
+}
 
 fn index(
   path: List(a),
@@ -633,7 +627,7 @@ fn index(
   case path {
     [] -> {
       inner(data)
-      |> push_path(position)
+      |> push_path(list.reverse(position))
     }
 
     [key, ..path] -> {
@@ -644,6 +638,7 @@ fn index(
         Error(kind) -> {
           let #(default, _) = inner(data)
           #(default, [DecodeError(kind, dynamic.classify(data), [])])
+          |> push_path(list.reverse(position))
         }
       }
     }
@@ -682,7 +677,7 @@ pub fn success(data: t) -> Decoder(t) {
   Decoder(function: fn(_) { #(data, []) })
 }
 
-pub fn failure(
+pub fn decode_error(
   expected expected: String,
   found found: Dynamic,
 ) -> List(dynamic.DecodeError) {
@@ -766,7 +761,7 @@ pub fn dict(
 ) -> Decoder(Dict(key, value)) {
   Decoder(fn(data) {
     case decode_dict(data) {
-      Error(_) -> #(dict.new(), failure("Dict", data))
+      Error(_) -> #(dict.new(), decode_error("Dict", data))
       Ok(dict) ->
         dict.fold(dict, #(dict.new(), []), fn(a, k, v) {
           // If there are any errors from previous key-value pairs then we
@@ -806,74 +801,93 @@ fn fold_dict(
 @external(erlang, "decode_ffi", "dict")
 @external(javascript, "../decode_ffi.mjs", "dict")
 fn decode_dict(data: Dynamic) -> Result(Dict(Dynamic, Dynamic), Nil)
-//
-//pub fn optional(item: Decoder(a)) -> Decoder(Option(a)) {
-//  Decoder(function: dynamic.optional(item.function))
-//}
-//
-//
-//
-//
-//pub fn map(decoder: Decoder(a), transformer: fn(a) -> b) -> Decoder(b) {
-//  Decoder(function: fn(d) {
-//    case decoder.function(d) {
-//      Ok(a) -> Ok(transformer(a))
-//      Error(e) -> Error(e)
-//    }
-//  })
-//}
-//
-//pub fn map_errors(
-//  decoder: Decoder(a),
-//  transformer: fn(List(DecodeError)) -> List(DecodeError),
-//) -> Decoder(a) {
-//  Decoder(function: fn(d) {
-//    case decoder.function(d) {
-//      Ok(a) -> Ok(a)
-//      Error(e) -> Error(transformer(e))
-//    }
-//  })
-//}
-//
-//pub fn collapse_errors(decoder: Decoder(a), name: String) -> Decoder(a) {
-//  Decoder(function: fn(d) {
-//    case decoder.function(d) {
-//      Ok(a) -> Ok(a)
-//      Error(_) -> Error([DecodeError(name, dynamic.classify(d), [])])
-//    }
-//  })
-//}
-//
-//pub fn then(decoder: Decoder(a), next: fn(a) -> Decoder(b)) -> Decoder(b) {
-//  Decoder(function: fn(d) {
-//    case decoder.function(d) {
-//      Ok(a) -> next(a) |> from(d)
-//      Error(e) -> Error(e)
-//    }
-//  })
-//}
-//
-//pub fn one_of(decoders: List(Decoder(a))) -> Decoder(a) {
-//  Decoder(function: fn(d) { run_decoders(d, decoders) })
-//}
-//
-//fn run_decoders(data: Dynamic, decoders: List(Decoder(a))) -> DecodeResult(a) {
-//  case decoders {
-//    [] -> Error([DecodeError("nothing", dynamic.classify(data), [])])
-//
-//    [decoder] -> from(decoder, data)
-//
-//    [decoder, ..decoders] ->
-//      case from(decoder, data) {
-//        Ok(value) -> Ok(value)
-//        Error(_) -> run_decoders(data, decoders)
-//      }
-//  }
-//}
-//
-//
-//pub fn fail(expected: String) -> Decoder(a) {
-//  Decoder(function: fn(d) {
-//    Error([DecodeError(expected, dynamic.classify(d), [])])
-//  })
-//}
+
+pub fn optional(inner: Decoder(a)) -> Decoder(Option(a)) {
+  Decoder(function: fn(data) {
+    case dynamic.optional(Ok)(data) {
+      Ok(option.None) -> #(option.None, [])
+      Ok(option.Some(data)) -> {
+        let #(data, errors) = inner.function(data)
+        #(option.Some(data), errors)
+      }
+      Error(_) -> {
+        let #(data, errors) = inner.function(data)
+        #(option.Some(data), errors)
+      }
+    }
+  })
+}
+
+pub fn map(decoder: Decoder(a), transformer: fn(a) -> b) -> Decoder(b) {
+  Decoder(function: fn(d) {
+    let #(data, errors) = decoder.function(d)
+    #(transformer(data), errors)
+  })
+}
+
+pub fn map_errors(
+  decoder: Decoder(a),
+  transformer: fn(List(DecodeError)) -> List(DecodeError),
+) -> Decoder(a) {
+  Decoder(function: fn(d) {
+    let #(data, errors) = decoder.function(d)
+    #(data, transformer(errors))
+  })
+}
+
+pub fn collapse_errors(decoder: Decoder(a), name: String) -> Decoder(a) {
+  Decoder(function: fn(dynamic_data) {
+    let #(data, errors) as layer = decoder.function(dynamic_data)
+    case errors {
+      [] -> layer
+      _ -> #(data, decode_error(name, dynamic_data))
+    }
+  })
+}
+
+pub fn then(decoder: Decoder(a), next: fn(a) -> Decoder(b)) -> Decoder(b) {
+  Decoder(function: fn(dynamic_data) {
+    let #(data, errors) = decoder.function(dynamic_data)
+    let decoder = next(data)
+    let #(data, _) as layer = decoder.function(dynamic_data)
+    case errors {
+      [] -> layer
+      _ -> #(data, errors)
+    }
+  })
+}
+
+pub fn one_of(
+  first: Decoder(a),
+  or alternatives: List(Decoder(a)),
+) -> Decoder(a) {
+  Decoder(function: fn(dynamic_data) {
+    let #(_, errors) as layer = first.function(dynamic_data)
+    case errors {
+      [] -> layer
+      _ -> run_decoders(dynamic_data, layer, alternatives)
+    }
+  })
+}
+
+fn run_decoders(
+  data: Dynamic,
+  failure: #(a, List(DecodeError)),
+  decoders: List(Decoder(a)),
+) -> #(a, List(DecodeError)) {
+  case decoders {
+    [] -> failure
+
+    [decoder, ..decoders] -> {
+      let #(_, errors) as layer = decoder.function(data)
+      case errors {
+        [] -> layer
+        _ -> run_decoders(data, failure, decoders)
+      }
+    }
+  }
+}
+
+pub fn failure(zero: a, expected: String) -> Decoder(a) {
+  Decoder(function: fn(d) { #(zero, decode_error(expected, d)) })
+}
