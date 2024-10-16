@@ -1,5 +1,6 @@
 import { Ok, Error, List, NonEmpty } from "./gleam.mjs";
 import { default as Dict } from "../gleam_stdlib/dict.mjs";
+import { DecodeError, classify } from "../gleam_stdlib/gleam/dynamic.mjs";
 
 export function index(data, key) {
   const int = Number.isInteger(key);
@@ -22,7 +23,8 @@ export function index(data, key) {
 
 export function list(data, decode, pushPath, index, emptyList) {
   if (!(data instanceof List)) {
-    throw "todo";
+    let error = new DecodeError("List", classify(data), emptyList);
+    return [emptyList, List.fromArray([error])];
   }
 
   const decoded = [];
