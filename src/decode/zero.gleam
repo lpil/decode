@@ -8,7 +8,7 @@
 //// or into errors if the data doesn't have the desired structure.
 ////
 //// The `Decoder` type is generic and has 1 type parameter, which is the type that
-//// it attempts to decode. A `Decoder(String)` can be used to decode strings, and a
+//// it attempts to zero. A `Decoder(String)` can be used to decode strings, and a
 //// `Decoder(Option(Int))` can be used to decode `Option(Int)`s
 ////
 //// Decoders work using _runtime reflection_ and the data structures of the target
@@ -32,8 +32,8 @@
 //// // "Hello, Joe!"
 ////
 //// let result =
-////   decode.string
-////   |> decode.run(data)
+////   zero.string
+////   |> zero.run(data)
 ////
 //// assert result == Ok("Hello, Joe!")
 //// ```
@@ -50,8 +50,8 @@
 //// // [1, 2, 3, 4]
 ////
 //// let result =
-////   decode.list(decode.int)
-////   |> decode.run(data)
+////   zero.list(zero.int)
+////   |> zero.run(data)
 ////
 //// assert result == Ok([1, 2, 3, 4])
 //// ```
@@ -72,8 +72,8 @@
 //// // 12.45
 ////
 //// let result =
-////   decode.optional(decode.int)
-////   |> decode.run(data)
+////   zero.optional(zero.int)
+////   |> zero.run(data)
 ////
 //// assert result == Ok(option.Some(12.45))
 //// ```
@@ -82,8 +82,8 @@
 //// // null
 ////
 //// let result =
-////   decode.optional(decode.int)
-////   |> decode.run(data)
+////   zero.optional(zero.int)
+////   |> zero.run(data)
 ////
 //// assert result == Ok(option.None)
 //// ```
@@ -101,8 +101,8 @@
 //// // { "Lucy" -> 10, "Nubi" -> 20 }
 ////
 //// let result =
-////   decode.dict(decode.string, decode.int)
-////   |> decode.run(data)
+////   zero.dict(zero.string, zero.int)
+////   |> zero.run(data)
 ////
 //// assert result == Ok(dict.from_list([
 ////   #("Lucy", 10),
@@ -120,8 +120,8 @@
 //// // { "one" -> { "two" -> 123 } }
 ////
 //// let result =
-////   decode.at(["one", "two"], decode.int)
-////   |> decode.run(data)
+////   zero.at(["one", "two"], zero.int)
+////   |> zero.run(data)
 ////
 //// assert result == Ok(123)
 //// ```
@@ -136,8 +136,8 @@
 //// // ["one", "two", "three"]
 ////
 //// let result =
-////   decode.at([1], decode.string)
-////   |> decode.run(data)
+////   zero.at([1], zero.string)
+////   |> zero.run(data)
 ////
 //// assert result == Ok("two")
 //// ```
@@ -159,14 +159,14 @@
 //// // }
 ////
 //// let decoder = {
-////   use name <- decode.field("name", decode.string)
-////   use score <- decode.field("score", decode.int)
-////   use colour <- decode.field("colour", decode.string)
-////   use enrolled <- decode.field("enrolled", decode.bool)
-////   decode.success(Player(name:, score:, colour:, enrolled:))
+////   use name <- zero.field("name", zero.string)
+////   use score <- zero.field("score", zero.int)
+////   use colour <- zero.field("colour", zero.string)
+////   use enrolled <- zero.field("enrolled", zero.bool)
+////   zero.success(Player(name:, score:, colour:, enrolled:))
 //// }
 ////
-//// let result = decode.run(decoder, data)
+//// let result = zero.run(decoder, data)
 ////
 //// assert result == Ok(Player("Mel Smith", 180, "Red", True))
 //// ```
@@ -250,15 +250,15 @@
 ////
 //// ```gleam
 //// let trainer_decoder = {
-////   use name <- decode.field("name", decode.string)
-////   use badge_count <- decode.field("badge-count", decode.int)
-////   decode.success(Trainer(name, badge_count))
+////   use name <- zero.field("name", zero.string)
+////   use badge_count <- zero.field("badge-count", zero.int)
+////   zero.success(Trainer(name, badge_count))
 //// })
 ////
 //// let gym_leader_decoder = {
-////   use name <- decode.field("name", decode.string)
-////   use speciality <- decode.field("speciality", pocket_monster_type_decoder)
-////   decode.success(GymLeader(name, speciality))
+////   use name <- zero.field("name", zero.string)
+////   use speciality <- zero.field("speciality", pocket_monster_type_decoder)
+////   zero.success(GymLeader(name, speciality))
 //// }
 //// ```
 ////
@@ -274,7 +274,7 @@
 ////   }
 //// }
 ////
-//// decode.run(decoder, data)
+//// zero.run(decoder, data)
 //// ```
 
 import gleam/dict.{type Dict}
@@ -331,8 +331,8 @@ pub fn subfield(
 }
 
 pub fn run(
-  decoder: Decoder(t),
   data: Dynamic,
+  decoder: Decoder(t),
 ) -> Result(t, List(dynamic.DecodeError)) {
   let #(maybe_invalid_data, errors) = decoder.function(data)
   case errors {
