@@ -670,3 +670,97 @@ pub fn variants_test() {
   |> should.be_error
   |> should.equal([DecodeError("String", "Float", ["the-string"])])
 }
+
+pub type PocketMonsterType {
+  Fire
+  Water
+  Grass
+  Electric
+}
+
+pub fn documentation_enum_example_test() {
+  let decoder = {
+    use decoded_string <- zero.then(zero.string)
+    case decoded_string {
+      // Return succeeding decoders for valid strings
+      "fire" -> zero.success(Fire)
+      "water" -> zero.success(Water)
+      "grass" -> zero.success(Grass)
+      "electric" -> zero.success(Electric)
+      // Return a failing decoder for any other strings
+      _ -> zero.failure(Fire, "PocketMonsterType")
+    }
+  }
+
+  zero.run(decoder, dynamic.from("water"))
+  |> should.be_ok
+  |> should.equal(Water)
+
+  zero.run(decoder, dynamic.from("wobble"))
+  |> should.be_error
+  |> should.equal([DecodeError("PocketMonsterType", "String", [])])
+}
+
+pub type PocketMonsterPerson {
+  Trainer(name: String, badge_count: Int)
+  GymLeader(name: String, speciality: String)
+}
+
+pub fn documentation_variants_example_test() {
+  let trainer_decoder = {
+    use name <- zero.field("name", zero.string)
+    use badge_count <- zero.field("badge-count", zero.int)
+    zero.success(Trainer(name, badge_count))
+  }
+
+  let gym_leader_decoder = {
+    use name <- zero.field("name", zero.string)
+    use speciality <- zero.field("speciality", zero.string)
+    zero.success(GymLeader(name, speciality))
+  }
+
+  let decoder = {
+    use tag <- zero.field("type", zero.string)
+    case tag {
+      "gym-leader" -> gym_leader_decoder
+      _ -> trainer_decoder
+    }
+  }
+
+  // Trainer
+  dynamic.from(
+    dict.from_list([
+      #("type", dynamic.from("trainer")),
+      #("name", dynamic.from("Ash")),
+      #("badge-count", dynamic.from(8)),
+    ]),
+  )
+  |> zero.run(decoder, _)
+  |> should.be_ok
+  |> should.equal(Trainer("Ash", 8))
+
+  // Gym leader
+  dynamic.from(
+    dict.from_list([
+      #("type", dynamic.from("gym-leader")),
+      #("name", dynamic.from("Brock")),
+      #("speciality", dynamic.from("Rock")),
+    ]),
+  )
+  |> zero.run(decoder, _)
+  |> should.be_ok
+  |> should.equal(GymLeader("Brock", "Rock"))
+
+  // Error
+  dynamic.from(
+    dict.from_list([
+      #("type", dynamic.from("gym-leader")),
+      #("name", dynamic.from("Brock")),
+    ]),
+  )
+  |> zero.run(decoder, _)
+  |> should.be_error
+  |> should.equal([
+    DecodeError(expected: "String", found: "Nil", path: ["speciality"]),
+  ])
+}
