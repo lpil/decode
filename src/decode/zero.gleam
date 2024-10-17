@@ -31,10 +31,7 @@
 //// // Data:
 //// // "Hello, Joe!"
 ////
-//// let result =
-////   zero.string
-////   |> zero.run(data)
-////
+//// let result = zero.run(data, zero.string)
 //// assert result == Ok("Hello, Joe!")
 //// ```
 ////
@@ -49,10 +46,7 @@
 //// // Data:
 //// // [1, 2, 3, 4]
 ////
-//// let result =
-////   zero.list(zero.int)
-////   |> zero.run(data)
-////
+//// let result = zero.run(data, zero.list(zero.int))
 //// assert result == Ok([1, 2, 3, 4])
 //// ```
 ////
@@ -71,20 +65,14 @@
 //// // Data:
 //// // 12.45
 ////
-//// let result =
-////   zero.optional(zero.int)
-////   |> zero.run(data)
-////
+//// let result = zero.run(data, zero.optional(zero.int))
 //// assert result == Ok(option.Some(12.45))
 //// ```
 //// ```gleam
 //// // Data:
 //// // null
 ////
-//// let result =
-////   zero.optional(zero.int)
-////   |> zero.run(data)
-////
+//// let result = zero.run(data, zero.optional(zero.int))
 //// assert result == Ok(option.None)
 //// ```
 ////
@@ -100,10 +88,7 @@
 //// // Data:
 //// // { "Lucy" -> 10, "Nubi" -> 20 }
 ////
-//// let result =
-////   zero.dict(zero.string, zero.int)
-////   |> zero.run(data)
-////
+//// let result = zero.run(data, zero.dict(zero.string, zero.int))
 //// assert result == Ok(dict.from_list([
 ////   #("Lucy", 10),
 ////   #("Nubi", 20),
@@ -119,10 +104,7 @@
 //// // Data:
 //// // { "one" -> { "two" -> 123 } }
 ////
-//// let result =
-////   zero.at(["one", "two"], zero.int)
-////   |> zero.run(data)
-////
+//// let result = zero.run(data, zero.at(["one", "two"], zero.int))
 //// assert result == Ok(123)
 //// ```
 ////
@@ -135,10 +117,7 @@
 //// // Data:
 //// // ["one", "two", "three"]
 ////
-//// let result =
-////   zero.at([1], zero.string)
-////   |> zero.run(data)
-////
+//// let result = zero.run(data, zero.at([1], zero.string))
 //// assert result == Ok("two")
 //// ```
 ////
@@ -166,8 +145,7 @@
 ////   zero.success(Player(name:, score:, colour:, enrolled:))
 //// }
 ////
-//// let result = zero.run(decoder, data)
-////
+//// let result = zero.run(data, decoder)
 //// assert result == Ok(Player("Mel Smith", 180, "Red", True))
 //// ```
 ////
@@ -208,10 +186,10 @@
 ////   }
 //// }
 ////
-//// let result = zero.run(decoder, dynamic.from("water"))
+//// let result = zero.run(dynamic.from("water"), decoder)
 //// assert result == Ok(Water)
 ////
-//// let result = zero.run(decoder, dynamic.from("wobble"))
+//// let result = zero.run(dynamic.from("wobble"), decoder)
 //// assert result == Error([DecodeError("PocketMonsterType", "String", [])])
 //// ```
 ////
@@ -274,7 +252,7 @@
 ////   }
 //// }
 ////
-//// zero.run(decoder, data)
+//// zero.run(data, decoder)
 //// ```
 
 import gleam/dict.{type Dict}
@@ -307,15 +285,13 @@ pub opaque type Decoder(t) {
 ///   ]))
 /// ]))
 ///
-/// decode.into({
-///   use name <- decode.parameter
-///   use email <- decode.parameter
-///   SignUp(name: name, email: email)
+/// let decoder ={
+///   use name <- zero.subfield(["data", "name"], zero.string)
+///   use email <- zero.subfield(["data", "email"], zero.string)
+///   zero.success(SignUp(name: name, email: email))
 /// })
-/// |> decode.subfield(["data", "name"], string)
-/// |> decode.subfield(["data", "email"], string)
-/// |> decode.run(data)
-/// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
+/// let result = decode.run(data)
+/// assert result == Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
 ///
 pub fn subfield(
