@@ -158,19 +158,15 @@
 //// //   "colour" -> "Red",
 //// // }
 ////
-//// let result =
-////   decode.into({
-////     use name <- decode.parameter
-////     use score <- decode.parameter
-////     use colour <- decode.parameter
-////     use enrolled <- decode.parameter
-////     Player(name: name, score: score, colour: colour, enrolled: enrolled)
-////   })
-////   |> decode.field("name", decode.string)
-////   |> decode.field("score", decode.int)
-////   |> decode.field("colour", decode.string)
-////   |> decode.field("enrolled", decode.bool)
-////   |> decode.run(data)
+//// let decoder = {
+////   use name <- decode.field("name", decode.string)
+////   use score <- decode.field("score", decode.int)
+////   use colour <- decode.field("colour", decode.string)
+////   use enrolled <- decode.field("enrolled", decode.bool)
+////   decode.success(Player(name:, score:, colour:, enrolled:))
+//// }
+////
+//// let result = decode.run(decoder, data)
 ////
 //// assert result == Ok(Player("Mel Smith", 180, "Red", True))
 //// ```
@@ -199,26 +195,23 @@
 //// succeeds.
 ////
 //// ```gleam
-//// let decoder =
-////   decode.string
-////   |> decode.then(fn(decoded_string) {
-////     case decoded_string {
-////       // Return succeeding decoders for valid strings
-////       "fire" -> decode.into(Fire)
-////       "water" -> decode.into(Water)
-////       "grass" -> decode.into(Grass)
-////       "electric" -> decode.into(Electric)
-////       // Return a failing decoder for any other strings
-////       _ -> decode.fail("PocketMonsterType")
-////     }
-////   })
+//// let decoder = {
+////   use decoded_string <- zero.then(zero.string)
+////   case decoded_string {
+////     // Return succeeding decoders for valid strings
+////     "fire" -> zero.success(Fire)
+////     "water" -> zero.success(Water)
+////     "grass" -> zero.success(Grass)
+////     "electric" -> zero.success(Electric)
+////     // Return a failing decoder for any other strings
+////     _ -> zero.failure(Fire, "PocketMonsterType")
+////   }
+//// }
 ////
-//// let result =
-////   decode.run(decoder, dynamic.from("water"))
+//// let result = zero.run(decoder, dynamic.from("water"))
 //// assert result == Ok(Water)
 ////
-//// let result =
-////   decode.run(decoder, dynamic.from("wobble"))
+//// let result = zero.run(decoder, dynamic.from("wobble"))
 //// assert result == Error([DecodeError("PocketMonsterType", "String", [])])
 //// ```
 ////
@@ -256,41 +249,32 @@
 //// First, define decoders for each of the variants:
 ////
 //// ```gleam
-//// let trainer_decoder =
-////   decode.into({
-////     use name <- decode.parameter
-////     use badge_count <- decode.parameter
-////     Trainer(name, badge_count)
-////   })
-////   |> decode.field("name", decode.string)
-////   |> decode.field("badge-count", decode.int)
+//// let trainer_decoder = {
+////   use name <- decode.field("name", decode.string)
+////   use badge_count <- decode.field("badge-count", decode.int)
+////   decode.success(Trainer(name, badge_count))
+//// })
 ////
-//// let gym_leader_decoder =
-////   decode.into({
-////     use name <- decode.parameter
-////     use speciality <- decode.parameter
-////     GymLeader(name, speciality)
-////   })
-////   |> decode.field("name", decode.string)
-////   |> decode.field("speciality", pocket_monster_type_decoder)
+//// let gym_leader_decoder = {
+////   use name <- decode.field("name", decode.string)
+////   use speciality <- decode.field("speciality", pocket_monster_type_decoder)
+////   decode.success(GymLeader(name, speciality))
+//// }
 //// ```
 ////
 //// A third decoder can be used to extract and decode the `"type"` field, and the
 //// `then` function then returns whichever decoder is suitable for the document.
 ////
 //// ```gleam
-//// let decoder =
-////   decode.at(["type"], decode.string)
-////   |> decode.then(fn(tag) {
-////     case tag {
-////       "trainer" -> trainer_decoder
-////       "gym-leader" -> gym_leader
-////       _ -> decode.fail("PocketMonsterPerson")
-////     }
-////   })
+//// let decoder = {
+////   use tag <- zero.field("type", zero.string)
+////   case tag {
+////     "gym-leader" -> gym_leader_decoder
+////     _ -> trainer_decoder
+////   }
+//// }
 ////
-//// decoder
-//// |> decode.run(data)
+//// decode.run(decoder, data)
 //// ```
 
 import gleam/dict.{type Dict}
