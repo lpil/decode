@@ -16,6 +16,10 @@
 //// your decoders, so it is important to test your decoders on all supported
 //// platforms.
 ////
+//// The decoding technique used by this module was inspired by Juraj Petráš'
+//// [Toy](https://github.com/Hackder/toy), Go's `encoding/json`, and Elm's
+//// `Json.Decode`. Thank you to them!
+////
 //// # Examples
 ////
 //// Dynamic data may come from various sources and so many different syntaxes could
