@@ -598,3 +598,75 @@ pub fn failure_test() {
   |> should.be_error
   |> should.equal([DecodeError("WibbleWobble", "Int", [])])
 }
+
+pub fn variants_test() {
+  let decoder = {
+    use tag <- zero.field("tag", zero.string)
+    case tag {
+      "int" -> {
+        use int <- zero.field("the-int", zero.int)
+        zero.success(AnInt(int))
+      }
+      "string" -> {
+        use string <- zero.field("the-string", zero.string)
+        zero.success(AString(string))
+      }
+      _ -> {
+        zero.failure(AnInt(0), "IntOrString")
+      }
+    }
+  }
+
+  // Int variant
+  dynamic.from(
+    dict.from_list([
+      #("tag", dynamic.from("int")),
+      #("the-int", dynamic.from(123)),
+    ]),
+  )
+  |> zero.run(decoder, _)
+  |> should.be_ok
+  |> should.equal(AnInt(123))
+
+  // String variant
+  dynamic.from(
+    dict.from_list([
+      #("tag", dynamic.from("string")),
+      #("the-string", dynamic.from("hello")),
+    ]),
+  )
+  |> zero.run(decoder, _)
+  |> should.be_ok
+  |> should.equal(AString("hello"))
+
+  // Invalid tag
+  dynamic.from(
+    dict.from_list([
+      #("tag", dynamic.from("dunno")),
+      #("the-string", dynamic.from("hello")),
+    ]),
+  )
+  |> zero.run(decoder, _)
+  |> should.be_error
+  |> should.equal([DecodeError("IntOrString", "Dict", [])])
+
+  // Missing tag
+  dynamic.from(dict.from_list([#("the-string", dynamic.from("hello"))]))
+  |> zero.run(decoder, _)
+  |> should.be_error
+  |> should.equal([
+    DecodeError("String", "Nil", ["tag"]),
+    DecodeError("IntOrString", "Dict", []),
+  ])
+
+  // String invalid field
+  dynamic.from(
+    dict.from_list([
+      #("tag", dynamic.from("string")),
+      #("the-string", dynamic.from(12.3)),
+    ]),
+  )
+  |> zero.run(decoder, _)
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Float", ["the-string"])])
+}
