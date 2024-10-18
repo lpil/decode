@@ -9,6 +9,34 @@ Ergonomic dynamic decoders for Gleam!
 gleam add decode
 ```
 ```gleam
+import decode/zero as decode
+
+pub type User {
+  User(name: String, email: String, is_admin: Bool)
+}
+
+/// Decode data of this shape into a `User` record.
+///
+/// {
+///   "name" -> "Lucy",
+///   "email" -> "lucy@example.com",
+///   "is-admin" -> true
+/// }
+///
+pub fn run(data: Dynamic) {
+  let decoder = {
+    use name <- zero.field("name", zero.string)
+    use score <- zero.field("score", zero.int)
+    use colour <- zero.field("colour", zero.string)
+    use enrolled <- zero.field("enrolled", zero.bool)
+    zero.success(Player(name:, score:, colour:, enrolled:))
+  }
+
+  decode.from(data, decoder)
+}
+```
+Or, alternatively:
+```gleam
 import decode
 
 pub type User {
@@ -18,9 +46,9 @@ pub type User {
 /// Decode data of this shape into a `User` record.
 ///
 /// {
-///   "name": "Lucy",
-///   "email": "lucy@example.com",
-///   "is-admin": true
+///   "name" -> "Lucy",
+///   "email" -> "lucy@example.com",
+///   "is-admin" -> true
 /// }
 ///
 pub fn run(data: Dynamic) {
