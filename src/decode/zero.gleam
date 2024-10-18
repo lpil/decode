@@ -279,6 +279,10 @@ pub opaque type Decoder(t) {
 /// The same as [`field`](#field), except taking a path to the value rather
 /// than a field name.
 ///
+/// This function will index into dictionaries with any key type, and if the key is
+/// an int then it'll also index into Erlang tuples and JavaScript arrays, and
+/// the first two elements of Gleam lists.
+///
 /// # Examples
 ///
 /// ```gleam
@@ -340,7 +344,8 @@ pub fn run(
 /// example, decoding a value that is within some deeply nested JSON objects.
 ///
 /// This function will index into dictionaries with any key type, and if the key is
-/// an int then it'll also index into Erlang tuples and JavaScript arrays.
+/// an int then it'll also index into Erlang tuples and JavaScript arrays, and
+/// the first two elements of Gleam lists.
 ///
 /// # Examples
 ///
@@ -463,7 +468,8 @@ pub fn decode_error(
 /// `Dynamic` data.
 ///
 /// This function will index into dictionaries with any key type, and if the key is
-/// an int then it'll also index into Erlang tuples and JavaScript arrays.
+/// an int then it'll also index into Erlang tuples and JavaScript arrays, and
+/// the first two elements of Gleam lists.
 ///
 /// # Examples
 ///
