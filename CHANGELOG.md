@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.0 - 2024-09-18
+
+- Added `decode/zero`, a module that provides a new decoder API.
+
 ## v0.2.1 - 2024-09-01
 
 - Fixed JavaScript support.
