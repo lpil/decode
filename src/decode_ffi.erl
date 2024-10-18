@@ -2,6 +2,10 @@
 
 -export([index/2, list/5, dict/1]).
 
+index([X | _], 0) ->
+    {ok, X};
+index([_, X | _], 1) ->
+    {ok, X};
 index(Tuple, Index) when is_tuple(Tuple) andalso is_integer(Index) ->
     try
         {ok, element(Index + 1, Tuple)}
