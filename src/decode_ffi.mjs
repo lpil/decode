@@ -22,7 +22,7 @@ export function index(data, key) {
 }
 
 export function list(data, decode, pushPath, index, emptyList) {
-  if (!(data instanceof List)) {
+  if (!(data instanceof List || Array.isArray(data))) {
     let error = new DecodeError("List", classify(data), emptyList);
     return [emptyList, List.fromArray([error])];
   }

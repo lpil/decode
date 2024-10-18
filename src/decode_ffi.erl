@@ -20,6 +20,8 @@ index(_, _) ->
     {error, <<"Dict">>}.
 
 
+list(T, A, B, C, D) when is_tuple(T) ->
+    list(tuple_to_list(T), A, B, C, D);
 list([], _, _, _, Acc) ->
     {lists:reverse(Acc), []};
 list([X | Xs], Decode, PushPath, Index, Acc) ->

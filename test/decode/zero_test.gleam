@@ -228,6 +228,13 @@ pub fn bit_array_error_test() {
   |> should.equal([DecodeError("BitArray", "Int", [])])
 }
 
+pub fn list_tuple_ok_test() {
+  dynamic.from(#("Hello", "Joe"))
+  |> zero.run(zero.list(zero.string))
+  |> should.be_ok
+  |> should.equal(["Hello", "Joe"])
+}
+
 pub fn list_string_ok_test() {
   dynamic.from(["Hello", "Joe"])
   |> zero.run(zero.list(zero.string))
@@ -258,6 +265,13 @@ pub fn list_inner_0_error_test() {
 
 pub fn list_inner_1_error_test() {
   dynamic.from([dynamic.from("1"), dynamic.from(2)])
+  |> zero.run(zero.list(zero.string))
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", ["1"])])
+}
+
+pub fn list_tuple_inner_1_error_test() {
+  dynamic.from(#("1", 2))
   |> zero.run(zero.list(zero.string))
   |> should.be_error
   |> should.equal([DecodeError("String", "Int", ["1"])])
