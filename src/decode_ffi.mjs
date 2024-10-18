@@ -5,11 +5,23 @@ import { DecodeError, classify } from "../gleam_stdlib/gleam/dynamic.mjs";
 export function index(data, key) {
   const int = Number.isInteger(key);
 
+  // Dictionaries and dictionary-like objects can be indexed
   if (data instanceof Dict || data instanceof WeakMap || data instanceof Map) {
     const entry = data.get(key, undefined);
     return new Ok(entry);
   }
 
+  // The first 3 elements of lists can be indexed
+  if ((key === 1 || key === 2) && data instanceof List) {
+    let i = 0;
+    for (const value of data) {
+      if (i === key) return new Ok(value);
+      i++;
+    }
+    return new Error("Indexable");
+  }
+
+  // Arrays and objects can be indexed
   if (
     (int && Array.isArray(data)) ||
     (data && typeof data === "object") ||
