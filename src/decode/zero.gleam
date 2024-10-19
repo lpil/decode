@@ -321,12 +321,12 @@ pub fn subfield(
 ///
 /// ```gleam
 /// let decoder = {
-///   use name <- zero.field("email", string)
-///   use email <- zero.field("password", string)
+///   use name <- zero.field("email", zero.string)
+///   use email <- zero.field("password", zero.string)
 ///   zero.success(SignUp(name: name, email: email))
-/// })
+/// }
 ///
-/// zero.from(data, decoder)
+/// zero.run(data, decoder)
 /// ```
 ///
 pub fn run(
