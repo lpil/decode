@@ -153,9 +153,6 @@
 //// assert result == Ok(Player("Mel Smith", 180, "Red", True))
 //// ```
 ////
-//// The ordering of the parameters defined with the `parameter` function must match
-//// the ordering of the decoders used with the `field` function.
-////
 //// ## Enum variants
 ////
 //// Imagine you have a custom type where all the variants do not contain any values.
@@ -267,7 +264,7 @@ import gleam/option.{type Option}
 import gleam/result
 
 /// A decoder is a value that can be used to turn dynamically typed `Dynamic`
-/// data into typed data using the `from` function.
+/// data into typed data using the `run` function.
 ///
 /// Several smaller decoders can be combined to make larger decoders using
 /// functions such as `list` and `field`.
@@ -359,13 +356,13 @@ pub fn run(
 /// ]))
 ///
 /// 
-/// zero.from(data, decoder)
+/// zero.run(data, decoder)
 /// // -> Ok(1000)
 /// ```
 ///
 /// ```gleam
 /// dynamic.from(Nil)
-/// |> zero.from(zero.optional(zero.int))
+/// |> zero.run(zero.optional(zero.int))
 /// // -> Ok(option.None)
 /// ```
 ///
@@ -485,7 +482,7 @@ pub fn decode_error(
 ///   SignUp(name: name, email: email)
 /// }
 ///
-/// let result = zero.from(data, decoder)
+/// let result = zero.run(data, decoder)
 /// assert result == Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
 ///
@@ -516,7 +513,7 @@ fn run_dynamic_function(
 /// # Examples
 ///
 /// ```gleam
-/// let result = zero.from(dynamic.from("Hello!"), zero.string)
+/// let result = zero.run(dynamic.from("Hello!"), zero.string)
 /// assert result == Ok("Hello!")
 /// ```
 ///
@@ -531,7 +528,7 @@ fn decode_string(data: Dynamic) -> #(String, List(dynamic.DecodeError)) {
 /// # Examples
 ///
 /// ```gleam
-/// let result = zero.from(dynamic.from(True), zero.bool)
+/// let result = zero.run(dynamic.from(True), zero.bool)
 /// assert result == Ok(True)
 /// ```
 ///
@@ -546,7 +543,7 @@ fn decode_bool(data: Dynamic) -> #(Bool, List(dynamic.DecodeError)) {
 /// # Examples
 ///
 /// ```gleam
-/// let result = zero.from(dynamic.from(147), zero.int)
+/// let result = zero.run(dynamic.from(147), zero.int)
 /// assert result == Ok(147)
 /// ```
 ///
@@ -561,7 +558,7 @@ fn decode_int(data: Dynamic) -> #(Int, List(dynamic.DecodeError)) {
 /// # Examples
 ///
 /// ```gleam
-/// let result = zero.from(dynamic.from(3.14), zero.float)
+/// let result = zero.run(dynamic.from(3.14), zero.float)
 /// assert result == Ok(3.14)
 /// ```
 ///
@@ -576,7 +573,7 @@ fn decode_float(data: Dynamic) -> #(Float, List(dynamic.DecodeError)) {
 /// # Examples
 ///
 /// ```gleam
-/// let result = zero.from(dynamic.from(3.14), zero.dynamic)
+/// let result = zero.run(dynamic.from(3.14), zero.dynamic)
 /// assert result == Ok(dynamic.from(3.14))
 /// ```
 ///
@@ -591,7 +588,7 @@ fn decode_dynamic(data: Dynamic) -> #(Dynamic, List(dynamic.DecodeError)) {
 /// # Examples
 ///
 /// ```gleam
-/// let result = zero.from(dynamic.from(<<5, 7>>), zero.bit_array)
+/// let result = zero.run(dynamic.from(<<5, 7>>), zero.bit_array)
 /// assert result == Ok(<<5, 7>>)
 /// ```
 ///
@@ -608,7 +605,7 @@ fn decode_bit_array(data: Dynamic) -> #(BitArray, List(dynamic.DecodeError)) {
 ///
 /// ```gleam
 /// let result =
-///   zero.from(dynamic.from([1, 2, 3]), zero.list(of: zero.int))
+///   zero.run(dynamic.from([1, 2, 3]), zero.list(of: zero.int))
 /// assert result == Ok([1, 2, 3])
 /// ```
 ///
@@ -640,7 +637,7 @@ fn decode_list(
 /// ])
 ///
 /// let result =
-///   zero.from(dynamic.from(values), zero.dict(zero.string, zero.int))
+///   zero.run(dynamic.from(values), zero.dict(zero.string, zero.int))
 /// assert result == Ok(values)
 /// ```
 ///
@@ -701,12 +698,12 @@ fn decode_dict(data: Dynamic) -> Result(Dict(Dynamic, Dynamic), Nil)
 /// # Examples
 ///
 /// ```gleam
-/// let result = zero.from(dynamic.from(100), zero.optional(zero.int))
+/// let result = zero.run(dynamic.from(100), zero.optional(zero.int))
 /// assert result == Ok(option.Some(100))
 /// ```
 ///
 /// ```gleam
-/// let result = zero.from(dynamic.from(Nil), zero.optional(zero.int))
+/// let result = zero.run(dynamic.from(Nil), zero.optional(zero.int))
 /// assert result == Ok(option.None)
 /// ```
 ///
@@ -732,7 +729,7 @@ pub fn optional(inner: Decoder(a)) -> Decoder(Option(a)) {
 ///
 /// ```gleam
 /// let decoder = zero.int |> zero.map(int.to_string)
-/// let result = zero.from(dynamic.from(1000), decoder)
+/// let result = zero.run(dynamic.from(1000), decoder)
 /// assert result == Ok("1000")
 /// ```
 ///
@@ -765,7 +762,7 @@ pub fn map_errors(
 ///
 /// ```gleam
 /// let decoder = zero.string |> zero.collapse_errors("MyThing")
-/// let result = zero.from(dynamic.from(1000), decoder)
+/// let result = zero.run(dynamic.from(1000), decoder)
 /// assert result == Error([DecodeError("MyThing", "Int", [])])
 /// ```
 ///
@@ -809,7 +806,7 @@ pub fn then(decoder: Decoder(a), next: fn(a) -> Decoder(b)) -> Decoder(b) {
 ///   zero.int |> zero.map(int.to_string),
 ///   zero.float |> zero.map(float.to_string),
 /// ])
-/// |> zero.from(dynamic.from(1000))
+/// |> zero.run(dynamic.from(1000))
 /// // -> Ok("1000")
 /// ```
 ///
