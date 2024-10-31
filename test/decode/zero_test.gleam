@@ -758,28 +758,28 @@ pub fn documentation_variants_example_test() {
 
 pub fn new_primitive_decoder_string_ok_test() {
   dynamic.from("Hello!")
-  |> zero.run(zero.new_primative_decoder(dynamic.string, ""))
+  |> zero.run(zero.new_primitive_decoder(dynamic.string, ""))
   |> should.be_ok
   |> should.equal("Hello!")
 }
 
 pub fn new_primitive_decoder_string_error_test() {
   dynamic.from(123)
-  |> zero.run(zero.new_primative_decoder(dynamic.string, ""))
+  |> zero.run(zero.new_primitive_decoder(dynamic.string, ""))
   |> should.be_error
   |> should.equal([DecodeError("String", "Int", [])])
 }
 
 pub fn new_primitive_decoder_float_ok_test() {
   dynamic.from(12.4)
-  |> zero.run(zero.new_primative_decoder(dynamic.float, 0.0))
+  |> zero.run(zero.new_primitive_decoder(dynamic.float, 0.0))
   |> should.be_ok
   |> should.equal(12.4)
 }
 
 pub fn new_primitive_decoder_float_error_test() {
   dynamic.from(123)
-  |> zero.run(zero.new_primative_decoder(dynamic.float, 0.0))
+  |> zero.run(zero.new_primitive_decoder(dynamic.float, 0.0))
   |> should.be_error
   |> should.equal([DecodeError("Float", "Int", [])])
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.1 - 2024-11-01
+
+- Fixed spelling of `new_primitive_decoder`.
+
 ## v0.4.0 - 2024-10-31
 
 - The `decode/zero` module gains `new_primitive_decoder` function.

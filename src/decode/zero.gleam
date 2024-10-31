@@ -355,7 +355,7 @@ pub fn run(
 ///   ])),
 /// ]))
 ///
-/// 
+///
 /// zero.run(data, decoder)
 /// // -> Ok(1000)
 /// ```
@@ -477,7 +477,7 @@ pub fn decode_error(
 /// ]))
 ///
 /// let decoder = {
-///   use name <- zero.field("name", string) 
+///   use name <- zero.field("name", string)
 ///   use email <- zero.field("email", string)
 ///   SignUp(name: name, email: email)
 /// }
@@ -850,7 +850,7 @@ pub fn failure(zero: a, expected: String) -> Decoder(a) {
 
 /// Create a decoder for a new data type from a decoding function.
 ///
-/// This function is used for new primative types. For example, you might
+/// This function is used for new primitive types. For example, you might
 /// define a decoder for Erlang's pid type.
 ///
 /// A default "zero" value is also required to make a decoder. When this
@@ -866,11 +866,11 @@ pub fn failure(zero: a, expected: String) -> Decoder(a) {
 /// import decode/zero
 ///
 /// pub fn string_decoder() -> zero.Decoder(String) {
-///   zero.new_primative_decoder(dynamic.string, "")
+///   zero.new_primitive_decoder(dynamic.string, "")
 /// }
 /// ```
 ///
-pub fn new_primative_decoder(
+pub fn new_primitive_decoder(
   decoding_function: fn(Dynamic) -> Result(t, List(DecodeError)),
   zero: t,
 ) -> Decoder(t) {
