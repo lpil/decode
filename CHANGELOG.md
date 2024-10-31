@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.0 - 2024-10-31
+
+- The `decode/zero` module gains `new_primitive_decoder` function.
+
 ## v0.3.0 - 2024-09-18
 
 - Added `decode/zero`, a module that provides a new decoder API.

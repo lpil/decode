@@ -847,3 +847,37 @@ fn run_decoders(
 pub fn failure(zero: a, expected: String) -> Decoder(a) {
   Decoder(function: fn(d) { #(zero, decode_error(expected, d)) })
 }
+
+/// Create a decoder for a new data type from a decoding function.
+///
+/// This function is used for new primative types. For example, you might
+/// define a decoder for Erlang's pid type.
+///
+/// A default "zero" value is also required to make a decoder. When this
+/// decoder is used as part of a larger decoder this zero value used as
+/// a placeholder so that the rest of the decoder can continue to run and
+/// collect all decoding errors.
+///
+/// If you were to make a decoder for the `String` type (rather than using the
+/// build-in `string` decoder) you would define it like so:
+///
+/// ```gleam
+/// import gleam/dynamic
+/// import decode/zero
+///
+/// pub fn string_decoder() -> zero.Decoder(String) {
+///   zero.new_primative_decoder(dynamic.string, "")
+/// }
+/// ```
+///
+pub fn new_primative_decoder(
+  decoding_function: fn(Dynamic) -> Result(t, List(DecodeError)),
+  zero: t,
+) -> Decoder(t) {
+  Decoder(function: fn(d) {
+    case decoding_function(d) {
+      Ok(t) -> #(t, [])
+      Error(errors) -> #(zero, errors)
+    }
+  })
+}
