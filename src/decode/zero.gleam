@@ -284,18 +284,18 @@ pub opaque type Decoder(t) {
 ///
 /// ```gleam
 /// let data = dynamic.from(dict.from_list([
-///   #("data", data.from_list([
+///   #("data", dict.from_list([
 ///     #("email", "lucy@example.com"),
 ///     #("name", "Lucy"),
 ///   ]))
 /// ]))
 ///
-/// let decoder ={
+/// let decoder = {
 ///   use name <- zero.subfield(["data", "name"], zero.string)
 ///   use email <- zero.subfield(["data", "email"], zero.string)
 ///   zero.success(SignUp(name: name, email: email))
-/// })
-/// let result = zero.run(data)
+/// }
+/// let result = zero.run(data, decoder)
 /// assert result == Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
 ///
