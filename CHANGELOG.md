@@ -5,6 +5,7 @@
 - The `field`, `subfield`, and `at` functions in `decode/zero` no longer return
   a default value when a field is not present, instead an error is returned.
 - `decode/zero` module gains the `optional_field` and `optionally_at` functions.
+- Fixed a bug in `decode/zero` with indexing with `0` on JavaScript.
 
 ## v0.4.1 - 2024-11-01
 

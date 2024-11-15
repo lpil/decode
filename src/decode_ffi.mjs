@@ -15,7 +15,7 @@ export function strict_index(data, key) {
   }
 
   // The first 3 elements of lists can be indexed
-  if ((key === 1 || key === 2) && data instanceof List) {
+  if ((key === 0 || key === 1 || key === 2) && data instanceof List) {
     let i = 0;
     for (const value of data) {
       if (i === key) return new Ok(new Some(value));
