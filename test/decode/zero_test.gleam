@@ -369,7 +369,7 @@ pub fn at_no_path_error_test() {
   dynamic.from(dict.from_list([#("first", dict.from_list([#("third", 1337)]))]))
   |> zero.run(zero.at(["first", "second", "third"], zero.int))
   |> should.be_error
-  |> should.equal([DecodeError("Dict", "Nil", ["first", "second"])])
+  |> should.equal([DecodeError("Field", "Nothing", ["first", "second"])])
 }
 
 pub fn optional_string_present_ok_test() {
@@ -646,7 +646,7 @@ pub fn variants_test() {
   |> zero.run(decoder)
   |> should.be_error
   |> should.equal([
-    DecodeError("String", "Nil", ["tag"]),
+    DecodeError("Field", "Nothing", ["tag"]),
     DecodeError("IntOrString", "Dict", []),
   ])
 
@@ -752,7 +752,7 @@ pub fn documentation_variants_example_test() {
   |> zero.run(decoder)
   |> should.be_error
   |> should.equal([
-    DecodeError(expected: "String", found: "Nil", path: ["speciality"]),
+    DecodeError(expected: "Field", found: "Nothing", path: ["speciality"]),
   ])
 }
 
@@ -782,4 +782,105 @@ pub fn new_primitive_decoder_float_error_test() {
   |> zero.run(zero.new_primitive_decoder(dynamic.float, 0.0))
   |> should.be_error
   |> should.equal([DecodeError("Float", "Int", [])])
+}
+
+pub type LinkedList {
+  ListEmpty
+  ListNonEmpty(element: Int, tail: LinkedList)
+}
+
+pub fn list_decoder() -> zero.Decoder(LinkedList) {
+  use tag <- zero.field("type", zero.string)
+  case tag {
+    "list-non-empty" -> {
+      use element <- zero.field("element", zero.int)
+      use tail <- zero.field("tail", list_decoder())
+      zero.success(ListNonEmpty(element:, tail:))
+    }
+    _ -> zero.success(ListEmpty)
+  }
+}
+
+pub fn recursive_data_structure_test() {
+  dynamic.from(
+    dict.from_list([
+      #("type", dynamic.from("list-non-empty")),
+      #("element", dynamic.from(1)),
+      #(
+        "tail",
+        dynamic.from(
+          dict.from_list([
+            #("type", dynamic.from("list-non-empty")),
+            #("element", dynamic.from(2)),
+            #(
+              "tail",
+              dynamic.from(
+                dict.from_list([#("type", dynamic.from("list-empty"))]),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    ]),
+  )
+  |> zero.run(list_decoder())
+  |> should.be_ok
+  |> should.equal(ListNonEmpty(1, ListNonEmpty(2, ListEmpty)))
+}
+
+pub fn optionally_at_dict_string_ok_test() {
+  dynamic.from(
+    dict.from_list([
+      #(
+        "first",
+        dict.from_list([#("second", dict.from_list([#("third", 1337)]))]),
+      ),
+    ]),
+  )
+  |> zero.run(zero.optionally_at(["first", "second", "third"], 100, zero.int))
+  |> should.be_ok
+  |> should.equal(1337)
+}
+
+pub fn optionally_at_dict_int_ok_test() {
+  dynamic.from(
+    dict.from_list([
+      #(10, dict.from_list([#(20, dict.from_list([#(30, 1337)]))])),
+    ]),
+  )
+  |> zero.run(zero.optionally_at([10, 20, 30], 123, zero.int))
+  |> should.be_ok
+  |> should.equal(1337)
+}
+
+pub fn optionally_at_tuple_int_ok_test() {
+  dynamic.from(#("x", #("a", "b", "c"), "z"))
+  |> zero.run(zero.optionally_at([1, 0], "something", zero.string))
+  |> should.be_ok
+  |> should.equal("a")
+}
+
+pub fn optionally_at_wrong_inner_error_test() {
+  dynamic.from(
+    dict.from_list([
+      #(
+        "first",
+        dict.from_list([#("second", dict.from_list([#("third", 1337)]))]),
+      ),
+    ]),
+  )
+  |> zero.run(zero.optionally_at(
+    ["first", "second", "third"],
+    "default",
+    zero.string,
+  ))
+  |> should.be_error
+  |> should.equal([DecodeError("String", "Int", ["first", "second", "third"])])
+}
+
+pub fn optionally_at_no_path_error_test() {
+  dynamic.from(dict.from_list([#("first", dict.from_list([#("third", 1337)]))]))
+  |> zero.run(zero.optionally_at(["first", "second", "third"], 100, zero.int))
+  |> should.be_ok
+  |> should.equal(100)
 }

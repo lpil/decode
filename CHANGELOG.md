@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.0 - 2024-11-15
+
+- The `field`, `subfield`, and `at` functions in `decode/zero` no longer return
+  a default value when a field is not present, instead an error is returned.
+- `decode/zero` module gains the `optional_field` and `optionally_at` functions.
+
 ## v0.4.1 - 2024-11-01
 
 - Fixed spelling of `new_primitive_decoder`.

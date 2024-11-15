@@ -260,7 +260,7 @@ import gleam/dict.{type Dict}
 import gleam/dynamic.{type DecodeError, type Dynamic, DecodeError}
 import gleam/int
 import gleam/list
-import gleam/option.{type Option}
+import gleam/option.{type Option, None, Some}
 import gleam/result
 
 /// A decoder is a value that can be used to turn dynamically typed `Dynamic`
@@ -305,7 +305,12 @@ pub fn subfield(
   next: fn(t) -> Decoder(final),
 ) -> Decoder(final) {
   Decoder(function: fn(data) {
-    let #(out, errors1) = index(field_path, [], field_decoder.function, data)
+    let #(out, errors1) =
+      index(field_path, [], field_decoder.function, data, fn(data, position) {
+        let #(default, _) = field_decoder.function(data)
+        #(default, [DecodeError("Field", "Nothing", [])])
+        |> push_path(list.reverse(position))
+      })
     let #(out, errors2) = next(out).function(data)
     #(out, list.append(errors1, errors2))
   })
@@ -367,7 +372,13 @@ pub fn run(
 /// ```
 ///
 pub fn at(path: List(segment), inner: Decoder(a)) -> Decoder(a) {
-  Decoder(function: fn(data) { index(path, [], inner.function, data) })
+  Decoder(function: fn(data) {
+    index(path, [], inner.function, data, fn(data, position) {
+      let #(default, _) = inner.function(data)
+      #(default, [DecodeError("Field", "Nothing", [])])
+      |> push_path(list.reverse(position))
+    })
+  })
 }
 
 fn index(
@@ -375,6 +386,7 @@ fn index(
   position: List(a),
   inner: fn(Dynamic) -> #(b, List(dynamic.DecodeError)),
   data: Dynamic,
+  handle_miss: fn(Dynamic, List(a)) -> #(b, List(dynamic.DecodeError)),
 ) -> #(b, List(dynamic.DecodeError)) {
   case path {
     [] -> {
@@ -384,8 +396,11 @@ fn index(
 
     [key, ..path] -> {
       case bare_index(data, key) {
-        Ok(data) -> {
-          index(path, [key, ..position], inner, data)
+        Ok(Some(data)) -> {
+          index(path, [key, ..position], inner, data, handle_miss)
+        }
+        Ok(None) -> {
+          handle_miss(data, [key, ..position])
         }
         Error(kind) -> {
           let #(default, _) = inner(data)
@@ -397,9 +412,9 @@ fn index(
   }
 }
 
-@external(erlang, "decode_ffi", "index")
-@external(javascript, "../decode_ffi.mjs", "index")
-fn bare_index(data: Dynamic, key: anything) -> Result(Dynamic, String)
+@external(erlang, "decode_ffi", "strict_index")
+@external(javascript, "../decode_ffi.mjs", "strict_index")
+fn bare_index(data: Dynamic, key: anything) -> Result(Option(Dynamic), String)
 
 fn push_path(
   layer: #(t, List(DecodeError)),
@@ -458,11 +473,9 @@ pub fn decode_error(
   [DecodeError(expected:, found: dynamic.classify(found), path: [])]
 }
 
-/// Run a decoder on a `Dynamic` value, decoding the value if it is of the
-/// desired type, or returning errors.
-///
-/// The first parameter is a field name which will be used to index into the
-/// `Dynamic` data.
+/// Run a decoder on a field of a `Dynamic` value, decoding the value if it is
+/// of the desired type, or returning errors. An error is returned if there is
+/// no field for the specified key.
 ///
 /// This function will index into dictionaries with any key type, and if the key is
 /// an int then it'll also index into Erlang tuples and JavaScript arrays, and
@@ -489,12 +502,91 @@ pub fn decode_error(
 /// If you wish to decode a value that is more deeply nested within the dynamic
 /// data, see [`subfield`](#subfield) and [`at`](#at).
 ///
+/// If you wish to return a default in the event that a field is not present,
+/// see [`optional_field`](#optional_field) and / [`optionally_at`](#optionally_at).
+///
 pub fn field(
   field_name: name,
   field_decoder: Decoder(t),
   next: fn(t) -> Decoder(final),
 ) -> Decoder(final) {
   subfield([field_name], field_decoder, next)
+}
+
+/// Run a decoder on a field of a `Dynamic` value, decoding the value if it is
+/// of the desired type, or returning errors. The given default value is
+/// returned if there is no field for the specified key.
+///
+/// This function will index into dictionaries with any key type, and if the key is
+/// an int then it'll also index into Erlang tuples and JavaScript arrays, and
+/// the first two elements of Gleam lists.
+///
+/// # Examples
+///
+/// ```gleam
+/// let data = dynamic.from(dict.from_list([
+///   #("name", "Lucy"),
+/// ]))
+///
+/// let decoder = {
+///   use name <- zero.field("name", string)
+///   use email <- zero.optional_field("email", "n/a", string)
+///   SignUp(name: name, email: email)
+/// }
+///
+/// let result = zero.run(data, decoder)
+/// assert result == Ok(SignUp(name: "Lucy", email: "n/a"))
+/// ```
+///
+pub fn optional_field(
+  key: name,
+  default: t,
+  field_decoder: Decoder(t),
+  next: fn(t) -> Decoder(final),
+) -> Decoder(final) {
+  Decoder(function: fn(data) {
+    let #(out, errors1) = case bare_index(data, key) {
+      Ok(Some(data)) -> field_decoder.function(data)
+      Ok(None) -> #(default, [])
+      Error(kind) -> {
+        #(default, [DecodeError(kind, dynamic.classify(data), [])])
+        |> push_path([key])
+      }
+    }
+    let #(out, errors2) = next(out).function(data)
+    #(out, list.append(errors1, errors2))
+  })
+}
+
+/// A decoder that decodes a value that is nested within other values. For
+/// example, decoding a value that is within some deeply nested JSON objects.
+///
+/// This function will index into dictionaries with any key type, and if the key is
+/// an int then it'll also index into Erlang tuples and JavaScript arrays, and
+/// the first two elements of Gleam lists.
+///
+/// # Examples
+///
+/// ```gleam
+/// let decoder = zero.optionally_at(["one", "two"], 100, zero.int)
+///
+/// let data = dynamic.from(dict.from_list([
+///   #("one", dict.from_list([])),
+/// ]))
+///
+///
+/// zero.run(data, decoder)
+/// // -> Ok(100)
+/// ```
+///
+pub fn optionally_at(
+  path: List(segment),
+  default: a,
+  inner: Decoder(a),
+) -> Decoder(a) {
+  Decoder(function: fn(data) {
+    index(path, [], inner.function, data, fn(_, _) { #(default, []) })
+  })
 }
 
 fn run_dynamic_function(
