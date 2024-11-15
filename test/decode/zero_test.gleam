@@ -778,10 +778,10 @@ pub fn new_primitive_decoder_float_ok_test() {
 }
 
 pub fn new_primitive_decoder_float_error_test() {
-  dynamic.from(123)
+  dynamic.from("blah")
   |> zero.run(zero.new_primitive_decoder(dynamic.float, 0.0))
   |> should.be_error
-  |> should.equal([DecodeError("Float", "Int", [])])
+  |> should.equal([DecodeError("Float", "String", [])])
 }
 
 pub type LinkedList {
