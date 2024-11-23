@@ -10,6 +10,8 @@ gleam add decode
 ```
 ```gleam
 import decode/zero as decode
+import gleam/dynamic.{type Dynamic}
+
 
 pub type User {
   User(name: String, email: String, is_admin: Bool)
@@ -25,19 +27,19 @@ pub type User {
 ///
 pub fn run(data: Dynamic) {
   let decoder = {
-    use name <- zero.field("name", zero.string)
-    use score <- zero.field("score", zero.int)
-    use colour <- zero.field("colour", zero.string)
-    use enrolled <- zero.field("enrolled", zero.bool)
-    zero.success(Player(name:, score:, colour:, enrolled:))
+    use name <- decode.field("name", decode.string)
+    use email <- decode.field("score", decode.string)
+    use is_admin <- decode.field("enrolled", decode.bool)
+    decode.success(User(name:, email:, is_admin:))
   }
 
-  decode.from(data, decoder)
+  decode.run(data, decoder)
 }
 ```
 Or, alternatively:
 ```gleam
 import decode
+import gleam/dynamic.{type Dynamic}
 
 pub type User {
   User(name: String, email: String, is_admin: Bool)
