@@ -330,8 +330,8 @@ pub opaque type Decoder(t) {
 ///   use email <- decode.parameter
 ///   SignUp(name: name, email: email)
 /// })
-/// |> decode.field("name", string)
-/// |> decode.field("email", string)
+/// |> decode.field("name", decode.string)
+/// |> decode.field("email", decode.string)
 /// |> decode.from(data)
 /// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
@@ -356,8 +356,8 @@ pub fn into(constructor: t1) -> Decoder(t1) {
 ///   use email <- decode.parameter
 ///   SignUp(name: name, email: email)
 /// })
-/// |> decode.field("name", string)
-/// |> decode.field("email", string)
+/// |> decode.field("name", decode.string)
+/// |> decode.field("email", decode.string)
 /// |> decode.from(data)
 /// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
@@ -388,8 +388,8 @@ pub fn parameter(body: fn(t1) -> t2) -> fn(t1) -> t2 {
 ///   use email <- decode.parameter
 ///   SignUp(name: name, email: email)
 /// })
-/// |> decode.field("name", string)
-/// |> decode.field("email", string)
+/// |> decode.field("name", decode.string)
+/// |> decode.field("email", decode.string)
 /// |> decode.from(data)
 /// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
@@ -412,7 +412,7 @@ pub fn field(
 ///
 /// ```gleam
 /// let data = dynamic.from(dict.from_list([
-///   #("data", data.from_list([
+///   #("data", dict.from_list([
 ///     #("email", "lucy@example.com"),
 ///     #("name", "Lucy"),
 ///   ]))
@@ -423,8 +423,8 @@ pub fn field(
 ///   use email <- decode.parameter
 ///   SignUp(name: name, email: email)
 /// })
-/// |> decode.subfield(["data", "name"], string)
-/// |> decode.subfield(["data", "email"], string)
+/// |> decode.subfield(["data", "name"], decode.string)
+/// |> decode.subfield(["data", "email"], decode.string)
 /// |> decode.from(data)
 /// // -> Ok(SignUp(name: "Lucy", email: "lucy@example.com"))
 /// ```
@@ -456,8 +456,8 @@ pub fn subfield(
 ///   use email <- decode.parameter
 ///   SignUp(name: name, email: email)
 /// })
-/// |> decode.field("email", string)
-/// |> decode.field("password", string)
+/// |> decode.field("email", decode.string)
+/// |> decode.field("password", decode.string)
 /// |> decode.from(data)
 /// ```
 ///
