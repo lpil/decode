@@ -1,6 +1,6 @@
 import decode/zero
 import gleam/dict
-import gleam/dynamic.{DecodeError}
+import gleam/dynamic.{type Dynamic, DecodeError}
 import gleam/float
 import gleam/int
 import gleam/option
@@ -883,4 +883,28 @@ pub fn optionally_at_no_path_error_test() {
   |> zero.run(zero.optionally_at(["first", "second", "third"], 100, zero.int))
   |> should.be_ok
   |> should.equal(100)
+}
+
+@external(erlang, "maps", "from_list")
+@external(javascript, "../decode_zero_test_ffi.mjs", "object")
+fn make_object(items: List(#(String, t))) -> Dynamic
+
+@external(erlang, "maps", "from_list")
+@external(javascript, "../decode_zero_test_ffi.mjs", "map")
+fn make_map(items: List(#(String, t))) -> Dynamic
+
+pub fn js_object_test() {
+  [#("a", 10), #("b", 20), #("c", 30)]
+  |> make_object
+  |> zero.run(zero.dict(zero.string, zero.int))
+  |> should.be_ok
+  |> should.equal(dict.from_list([#("a", 10), #("b", 20), #("c", 30)]))
+}
+
+pub fn js_map_test() {
+  [#("a", 10), #("b", 20), #("c", 30)]
+  |> make_map
+  |> zero.run(zero.dict(zero.string, zero.int))
+  |> should.be_ok
+  |> should.equal(dict.from_list([#("a", 10), #("b", 20), #("c", 30)]))
 }

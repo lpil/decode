@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.0 - 2024-12-10
+
+- `zero.dict` can now decode JavaScript maps, weakmaps, and objects without a
+  prototype.
+
 ## v0.5.0 - 2024-11-15
 
 - The `field`, `subfield`, and `at` functions in `decode/zero` no longer return
