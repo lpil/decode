@@ -894,11 +894,11 @@ pub fn then(decoder: Decoder(a), next: fn(a) -> Decoder(b)) -> Decoder(b) {
 /// # Examples
 ///
 /// ```gleam
-/// zero.one_of(zero.string, or: [
+/// let decoder = zero.one_of(zero.string, or: [
 ///   zero.int |> zero.map(int.to_string),
 ///   zero.float |> zero.map(float.to_string),
 /// ])
-/// |> zero.run(dynamic.from(1000))
+/// zero.run(dynamic.from(1000), decoder)
 /// // -> Ok("1000")
 /// ```
 ///
