@@ -908,3 +908,28 @@ pub fn js_map_test() {
   |> should.be_ok
   |> should.equal(dict.from_list([#("a", 10), #("b", 20), #("c", 30)]))
 }
+
+type Nested {
+  Nested(List(Nested))
+  Value(String)
+}
+
+fn recursive_decoder() -> zero.Decoder(Nested) {
+  zero.one_of(zero.string |> zero.map(Value), [
+    zero.list(zero.lazy(recursive_decoder)) |> zero.map(Nested),
+  ])
+}
+
+pub fn lazy_test() {
+  let nested = [["one", "two"], ["three"], []]
+  let expected =
+    Nested([
+      Nested([Value("one"), Value("two")]),
+      Nested([Value("three")]),
+      Nested([]),
+    ])
+
+  zero.run(dynamic.from(nested), recursive_decoder())
+  |> should.be_ok
+  |> should.equal(expected)
+}

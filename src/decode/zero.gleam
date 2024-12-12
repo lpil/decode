@@ -973,3 +973,29 @@ pub fn new_primitive_decoder(
     }
   })
 }
+
+/// Create a decoder that will lazily create the wrapped decoder when needed.
+///
+/// This may be useful to wrap a recursive decoder to use when decoding arbitrarily nested data.
+///
+/// ```gleam
+/// import decode/zero
+///
+/// type Nested {
+///   Nested(List(Nested))
+///   Value(String)
+/// }
+///
+/// fn recursive_decoder() -> Decoder(Nested) {
+///   zero.one_of(zero.string |> zero.map(Value), [
+///     zero.list(zero.lazy(recursive_decoder)) |> zero.map(Nested),
+///   ])
+/// }
+/// ```
+///
+pub fn lazy(inner: fn() -> Decoder(a)) -> Decoder(a) {
+  Decoder(function: fn(data) {
+    let decoder = inner()
+    decoder.function(data)
+  })
+}
