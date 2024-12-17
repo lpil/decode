@@ -921,7 +921,7 @@ fn recursive_decoder() -> zero.Decoder(Nested) {
   ])
 }
 
-pub fn lazy_test() {
+pub fn recursive_test() {
   let nested = [["one", "two"], ["three"], []]
   let expected =
     Nested([
