@@ -915,8 +915,9 @@ type Nested {
 }
 
 fn recursive_decoder() -> zero.Decoder(Nested) {
+  use <- zero.recursive()
   zero.one_of(zero.string |> zero.map(Value), [
-    zero.list(zero.lazy(recursive_decoder)) |> zero.map(Nested),
+    zero.list(recursive_decoder()) |> zero.map(Nested),
   ])
 }
 

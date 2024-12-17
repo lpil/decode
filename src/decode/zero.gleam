@@ -979,7 +979,8 @@ pub fn new_primitive_decoder(
 /// This may be useful to wrap a recursive decoder to use when decoding arbitrarily nested data.
 ///
 /// ```gleam
-/// import decode/zero
+/// import gleam/dynamic
+/// import decode/zero.{type Decoder}
 ///
 /// type Nested {
 ///   Nested(List(Nested))
@@ -987,13 +988,14 @@ pub fn new_primitive_decoder(
 /// }
 ///
 /// fn recursive_decoder() -> Decoder(Nested) {
+///   use <- zero.recursive()
 ///   zero.one_of(zero.string |> zero.map(Value), [
-///     zero.list(zero.lazy(recursive_decoder)) |> zero.map(Nested),
+///     zero.list(recursive_decoder()) |> zero.map(Nested),
 ///   ])
 /// }
 /// ```
 ///
-pub fn lazy(inner: fn() -> Decoder(a)) -> Decoder(a) {
+pub fn recursive(inner: fn() -> Decoder(a)) -> Decoder(a) {
   Decoder(function: fn(data) {
     let decoder = inner()
     decoder.function(data)
