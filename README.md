@@ -28,8 +28,8 @@ pub type User {
 pub fn run(data: Dynamic) {
   let decoder = {
     use name <- decode.field("name", decode.string)
-    use email <- decode.field("score", decode.string)
-    use is_admin <- decode.field("enrolled", decode.bool)
+    use email <- decode.field("email", decode.string)
+    use is_admin <- decode.field("is-admin", decode.bool)
     decode.success(User(name:, email:, is_admin:))
   }
 
