@@ -976,7 +976,8 @@ pub fn new_primitive_decoder(
 
 /// Create a decoder that will lazily create the wrapped decoder when needed.
 ///
-/// This may be useful to wrap a recursive decoder to use when decoding arbitrarily nested data.
+/// This function can be used to create decoders that use themselves, for
+/// example, for deeply nested data.
 ///
 /// ```gleam
 /// import gleam/dynamic
@@ -987,10 +988,10 @@ pub fn new_primitive_decoder(
 ///   Value(String)
 /// }
 ///
-/// fn recursive_decoder() -> Decoder(Nested) {
-///   use <- zero.recursive()
+/// fn nested_decoder() -> Decoder(Nested) {
+///   use <- zero.recursive
 ///   zero.one_of(zero.string |> zero.map(Value), [
-///     zero.list(recursive_decoder()) |> zero.map(Nested),
+///     zero.list(nested_decoder()) |> zero.map(Nested),
 ///   ])
 /// }
 /// ```

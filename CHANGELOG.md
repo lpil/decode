@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.0 - 2024-12-19
+
+- Added the `zero.recursive` function.
+
 ## v1.0.0 - 2024-12-10
 
 - `zero.dict` can now decode JavaScript maps, weakmaps, and objects without a
